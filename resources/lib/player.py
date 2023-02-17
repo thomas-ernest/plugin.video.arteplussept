@@ -9,12 +9,12 @@ class Player(xbmc.Player):
 
     def __init__(self, plugin, settings, program_id):
         super(Player, self).__init__()
-        self.plugin=plugin
-        self.settings=settings
-        self.program_id=program_id
-        self.last_time=0
+        self.plugin = plugin
+        self.settings = settings
+        self.program_id = program_id
+        self.last_time = 0
 
-    def isPlayback(self):
+    def is_playback(self):
         try:
             # need to keep track of last time to avoid 
             # RuntimeError: Kodi is not playing any media file
@@ -49,7 +49,7 @@ class Player(xbmc.Player):
         self.synchProgress()
         pass
 
-    def synchProgress(self):
+    def synch_progress(self):
         if not self.settings.username or not self.settings.password:
             xbmc.log("Unable to synchronise progress with Arte TV for {pid}".format(pid=self.program_id))
             xbmc.log("Missing user or password to authenticate")
