@@ -1,9 +1,10 @@
-
+"""Add-on settings"""
 languages = ['fr', 'de', 'en', 'es', 'pl', 'it']
 qualities = ['SQ', 'EQ', 'HQ']
 
 
 class Settings:
+    """Add-on settings"""
     def __init__(self, plugin):
         # Language used to query arte api
         # defaults to fr
