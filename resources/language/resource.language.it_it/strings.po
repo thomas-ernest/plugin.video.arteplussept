@@ -28,7 +28,7 @@ msgstr "Qualità video"
 
 msgctxt "#30053"
 msgid "Show video stream options"
-msgstr "Show video stream options"
+msgstr "Mostrare opzionali video stream"
 
 msgctxt "#30054"
 msgid "Email"
@@ -49,7 +49,7 @@ msgstr "Disconnessione"
 
 msgctxt "#30011"
 msgid "View collection as menu"
-msgstr "Visualizza la raccolta come menu"
+msgstr "Visualizza la collezione come menu"
 
 
 msgctxt "#30012"
@@ -59,7 +59,7 @@ msgstr "Search"
 
 msgctxt "#30014"
 msgid "Authentication needed in addon settings"
-msgstr "Autenticazione necessaria nelle impostazioni del componente aggiuntivo"
+msgstr "Autentificazione necessaria nelle impostazioni del componente aggiuntivo"
 
 msgctxt "#30015"
 msgid "User already logged in"
@@ -71,19 +71,19 @@ msgstr "Vuoi accedere come \"{new_user}\" invece che come \"{old_user}\" ?"
 
 msgctxt "#30017"
 msgid "Logged in as \"{user}\""
-msgstr "Effettuato l'accesso come \"{user}\""
+msgstr "Accesso effettuato come \"{user}\""
 
 msgctxt "#30018"
 msgid "Logged out"
-msgstr "Disconnesso"
+msgstr "Disconnetato"
 
 msgctxt "#30019"
 msgid "Enter password please:"
-msgstr "Inserisci la password per favore:"
+msgstr "Inserisci password per favore:"
 
 msgctxt "#30020"
 msgid "Unable to authenticate"
-msgstr "Impossibile autenticare"
+msgstr "Impossibile da autentificare"
 
 msgctxt "#30021"
 msgid "Email missing"
@@ -100,23 +100,23 @@ msgstr "Aggiungi ai preferiti di Arte"
 
 msgctxt "#30024"
 msgid "Remove from Arte favorites"
-msgstr "Rimuovi dai preferiti di Arte"
+msgstr "Rimuovere dai preferiti di Arte"
 
 msgctxt "#30025"
 msgid "\"{label}\" successfully added to favorites"
-msgstr "\"{label}\" aggiunto con successo ai preferiti"
+msgstr "\"{label}\" aggiunzione ai preferiti riuscito"
 
 msgctxt "#30026"
 msgid "Failed to add \"{label}\" to favorites"
-msgstr "Impossibile aggiungere \"{label}\" ai preferiti"
+msgstr "Impossibile di aggiungere \"{label}\" ai preferiti"
 
 msgctxt "#30027"
 msgid "\"{label}\" successfully removed from favorites"
-msgstr "\"{label}\" rimozione riuscita dai preferiti"
+msgstr "\"{label}\" rimozione dai preferiti riuscita"
 
 msgctxt "#30028"
 msgid "Failed to remove \"{label}\" from favorites"
-msgstr "Impossibile rimuovere \"{label}\" dai preferiti"
+msgstr "Impossibile di rimuovere \"{label}\" dai preferiti"
 
 msgctxt "#30029"
 msgid "Stream \"{strm}\" in \"{ln}\" is not available"
@@ -125,7 +125,7 @@ msgstr "Lo streaming \"{strm}\" in \"{ln}\" non è disponibile"
 
 msgctxt "#30030"
 msgid "Purge my history"
-msgstr "Elimina la cronologia"
+msgstr "Eliminare la cronologia"
 
 msgctxt "#30031"
 msgid "Successfully purged history"
@@ -142,15 +142,15 @@ msgstr "Vuoi davvero eliminare la tua storia ?"
 
 msgctxt "#30035"
 msgid "Mark as watched in Arte"
-msgstr "Segna come guardato in Arte"
+msgstr "Segnare come vizualizzato su Arte"
 
 msgctxt "#30036"
 msgid "\"{label}\" successfully marked as watched"
-msgstr "\"{label}\" contrassegnato con successo come guardato"
+msgstr "\"{label}\" Segnato come vizualizzato con sucesso"
 
 msgctxt "#30037"
 msgid "Failed to mark as watched \"{label}\""
-msgstr "Impossibile contrassegnare come guardato \"{label}\""
+msgstr "Segnato come vizualizzato non riuscito \"{label}\""
 
 
 msgctxt "#30038"
@@ -164,7 +164,7 @@ msgstr "Pagina precedente"
 
 msgctxt "#30040"
 msgid "Purge my Arte favorites"
-msgstr "Elimina i miei preferiti di Arte"
+msgstr "Eliminare i miei preferiti di Arte"
 
 msgctxt "#30041"
 msgid "Successfully purged favorites"
@@ -172,7 +172,7 @@ msgstr "Preferiti eliminati correttamente"
 
 msgctxt "#30042"
 msgid "Failed to purge favorites"
-msgstr "Impossibile eliminare i preferiti"
+msgstr "eliminare i preferiti non riusciti"
 
 msgctxt "#30043"
 msgid "Do you really want to purge Arte favorites ?"
