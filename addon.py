@@ -148,10 +148,11 @@ def display_collection(kind, program_id):
     return plugin.finish(view.build_mixed_collection(plugin, kind, program_id, settings))
 
 
-@plugin.route('/streams/<program_id>', name='streams')
-def streams(program_id):
+@plugin.route('/streams/<program_id>/<duration>', name='streams')
+def streams(program_id, duration):
     """Play a multi language content."""
-    return plugin.finish(view.build_video_streams(plugin, settings, program_id))
+    # return plugin.finish(view.build_video_streams(plugin, settings, program_id))
+    return plugin.set_resolved_url(view.build_multilang_video(plugin, settings, program_id, duration))
 
 
 @plugin.route('/play_live/<stream_url>', name='play_live')

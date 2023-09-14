@@ -73,17 +73,6 @@ class ArteVideoItem(ArteItem):
                 'fanart_image': self._get_image_url(),
                 'TotalTime': str(self._get_duration()),
             },
-            'context_menu': [
-                (self.plugin.addon.getLocalizedString(30023),
-                    actions.background(self.plugin.url_for(
-                        'add_favorite', program_id=program_id, label=label))),
-                (self.plugin.addon.getLocalizedString(30024),
-                    actions.background(self.plugin.url_for(
-                        'remove_favorite', program_id=program_id, label=label))),
-                (self.plugin.addon.getLocalizedString(30035),
-                    actions.background(self.plugin.url_for(
-                        'mark_as_watched', program_id=program_id, label=label))),
-            ],
         }
 
     def _get_duration(self):
@@ -182,7 +171,8 @@ class ArteTvVideoItem(ArteVideoItem):
                 is_playable = False
         else:
             # content_type = Content.VIDEO
-            path = self.plugin.url_for('play', kind=kind, program_id=program_id)
+            #path = self.plugin.url_for('play', kind=kind, program_id=program_id)
+            path = self.plugin.url_for('streams', program_id=program_id, duration=self._get_duration())
             is_playable = True
 
         xbmc_item = self.build_item(path, is_playable)

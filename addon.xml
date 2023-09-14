@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.arteplussept" name="Arte +7" version="1.4.0" provider-name="bmf, thomas-ernest">
+<addon id="plugin.video.arteplussept" name="Arte +7" version="1.5.0" provider-name="bmf, thomas-ernest">
     <!-- https://kodi.wiki/view/Addon.xml -->
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.xbmcswift2" version="19.0.4"/>
         <import addon="script.module.requests" version="2.22.0"/>
         <import addon="script.module.dateutil" version="2.8.1"/>
+        <import addon="script.module.m3u8" version="3.5.0"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="addon.py">
         <provides>video</provides>

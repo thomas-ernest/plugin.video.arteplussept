@@ -1,6 +1,8 @@
 """Map JSON API outputs into playable content and meanus for Kodi"""
 # pylint: disable=import-error
 from xbmcswift2 import xbmc
+from xbmcswift2 import ListItem
+
 from resources.lib import hof
 from resources.lib import utils
 from resources.lib.mapper.arteitem import ArteVideoItem
@@ -186,20 +188,40 @@ def map_api_categories_item(plugin, item):
 def map_playable(streams, quality, audio_slot, match):
     """Select the stream best matching quality and audio slot criteria in streams
     and map to a menu entry"""
+
+    # list_item = ListItem.from_dict({
+    #     'info_type': 'video',
+    #     'label': str('my_video'),
+    #     'path': get_stream(streams, quality, audio_slot, match).get('url'),
+    # })
+    list_item = ListItem(label='my_video', path=get_stream(streams, quality, audio_slot, match).get('url'))
+    list_item.add_stream_info(
+        'audio', {
+            'language': 'en'
+        })
+    list_item.add_stream_info(
+        'audio', {
+            'language': 'fr'
+        })
+    list_item.add_stream_info(
+        'audio', {
+            'language': 'de'
+        })
+    
+    print('my_list_item', list_item)
+    return list_item
+
+
+def get_stream(streams, quality, audio_slot, match):
     stream = None
     for qlt in [quality] + [i for i in ['SQ', 'EQ', 'HQ', 'MQ'] if i is not quality]:
         # pylint: disable=cell-var-from-loop
         stream = hof.find(lambda s: match(s, qlt, audio_slot), streams)
         if stream:
             break
-
     if stream is None:
         raise RuntimeError('Could not resolve stream...')
-
-    return {
-        'info_type': 'video',
-        'path': stream.get('url'),
-    }
+    return stream
 
 
 def match_hbbtv(stream, quality, audio_slot):
