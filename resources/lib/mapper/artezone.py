@@ -23,14 +23,27 @@ class ArteZone(ArteCollection):
         a zone in the HOME page or SEARH page result.
         """
         zone_id = zone.get('id')
+
+        # try to get category from cache
+        if isinstance(self.cached_categories, dict):
+            cached_category = self.cached_categories.get(zone_id, None)
+            if self._is_valid_menu(cached_category):
+                return {
+                    'label': zone.get('title'),
+                    'path': self.plugin.url_for('cached_category', zone_id=zone_id)
+                }
+
+        # otherwise try to build the category and save it in cqche
         cached_category = self._build_menu(
             zone.get('content'), 'category_page', zone_id=zone_id, page_id='HOME')
         if self._is_valid_menu(cached_category):
-            self.cached_categories[zone_id] = cached_category
+            if isinstance(self.cached_categories, dict):
+                self.cached_categories[zone_id] = cached_category
             return {
                 'label': zone.get('title'),
                 'path': self.plugin.url_for('cached_category', zone_id=zone_id)
             }
+
         return None
 
     def _is_valid_menu(self, cached_category):

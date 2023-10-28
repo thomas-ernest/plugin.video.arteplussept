@@ -10,6 +10,8 @@ import dateutil.parser
 from xbmcswift2 import xbmc
 # pylint: disable=import-error
 from xbmcswift2 import actions
+from resources.lib import api
+from resources.lib import user
 
 
 # pylint: disable=too-few-public-methods
@@ -43,19 +45,25 @@ class ArteVideoItem(ArteItem):
     It aims at being mapped into XBMC ListItem.
     """
 
+    def __init__(self, plugin, settings, json_dict):
+        ArteItem.__init__(self, plugin, json_dict)
+        self.settings = settings
+
     def build_item(self, path, is_playable):
         """Identify what is the type of current item and build the most detailled item possible"""
         if self.is_hbbtv():
-            return ArteHbbTvVideoItem(self.plugin, self.json_dict).build_item(path, is_playable)
-        return ArteTvVideoItem(self.plugin, self.json_dict).build_item(path, is_playable)
+            return ArteHbbTvVideoItem(self.plugin, self.settings, self.json_dict).build_item(
+                path, is_playable)
+        return ArteTvVideoItem(self.plugin, self.settings, self.json_dict).build_item(
+            path, is_playable)
 
     def _build_item(self, path, is_playable):
         """
         Build ListItem common to HBB TV and Arte TV API.
         """
         item = self.json_dict
-        program_id = item.get('programId')
         label = self.format_title_and_subtitle()
+
         return {
             'label': label,
             'path': path,
@@ -73,7 +81,35 @@ class ArteVideoItem(ArteItem):
                 'fanart_image': self._get_image_url(),
                 'TotalTime': str(self._get_duration()),
             },
-            'context_menu': [
+            'context_menu': self._build_context_menu(item),
+        }
+
+    def _build_context_menu(self, item):
+        """
+        Return an ordered list of tuple label-action to be used as context menu.
+        List contains tuples to manage favorites and mark as watched, is a user is logged in.
+        List contains tuples in multiple-languages, if setting is enabled.
+        List might be empty, but never None
+        """
+        program_id = item.get('programId')
+        label = self.format_title_and_subtitle()
+        context_menu = []
+
+        # multi-language streams are available in context menu if enabled
+        if self.settings.multilanguage:
+            kind = item.get('kind')
+            if isinstance(kind, dict) and kind.get('code', False):
+                kind = kind.get('code')
+            # support multi-language for videos items and not collections e.g. TV_SERIES
+            if kind == 'SHOW':
+                streams = api.streams(kind, program_id, self.settings.language)
+                context_menu.extend(
+                    self._map_streams(program_id, kind, streams, self.settings.quality))
+
+        # favorites management and mark as watched in Arte TV
+        # are available in context menu, if user is logged-in
+        if user.is_logged_in(self.plugin, self.settings):
+            context_menu.extend([
                 (self.plugin.addon.getLocalizedString(30023),
                     actions.background(self.plugin.url_for(
                         'add_favorite', program_id=program_id, label=label))),
@@ -83,8 +119,50 @@ class ArteVideoItem(ArteItem):
                 (self.plugin.addon.getLocalizedString(30035),
                     actions.background(self.plugin.url_for(
                         'mark_as_watched', program_id=program_id, label=label))),
-            ],
-        }
+            ])
+
+        return context_menu
+
+    def _map_streams(self, program_id, kind, streams, quality):
+        """Map JSON item and list of audio streams into a menu."""
+        sorted_filtered_streams = self._sort_and_filter_streams(streams, quality)
+
+        return [self._map_to_ctxt_menu(program_id, kind, stream)
+                for stream in sorted_filtered_streams]
+
+    def _sort_and_filter_streams(self, streams, quality):
+        """
+        Return a list of streams matching quality provided as parameter
+        and order by their numerical audio slot from Arte API
+        """
+        if len(streams) <= 0:
+            return []
+
+        filtered_streams = None
+        for qlt in [quality] + [i for i in ['SQ', 'EQ', 'HQ', 'MQ'] if i is not quality]:
+            filtered_streams = [s for s in streams if s.get('quality') == qlt]
+            if len(filtered_streams) > 0:
+                break
+
+        if filtered_streams is None or len(filtered_streams) == 0:
+            raise RuntimeError('Could not resolve stream...')
+
+        return sorted(
+            filtered_streams, key=lambda s: s.get('audioSlot'))
+
+    def _map_to_ctxt_menu(self, program_id, kind, stream):
+        """
+        Map an Arte HBBTV API stream to a context menu item,
+        which enables to play the specific stream
+        """
+        audio_slot = stream.get('audioSlot')
+        audio_label = stream.get('audioLabel')
+        return (
+            audio_label,
+            actions.background(self.plugin.url_for(
+                'play_siblings', kind=kind, program_id=program_id,
+                audio_slot=str(audio_slot), from_playlist='1'))
+        )
 
     def _get_duration(self):
         """
@@ -154,7 +232,7 @@ class ArteTvVideoItem(ArteVideoItem):
     from Arte TV API data
     """
 
-    def map_artetv_item(self):
+    def map_item(self):
         """
         Return video menu item to show content from Arte TV API.
         Manage specificities of various types : playlist, menu or video items
@@ -287,6 +365,13 @@ class ArteHbbTvVideoItem(ArteVideoItem):
     from Arte HBB TV API data
     """
 
+    def map_item(self):
+        """Create a playable video menu item from a json returned by Arte HBBTV API"""
+        program_id = self.json_dict.get('programId')
+        kind = self.json_dict.get('kind')
+        path = self.plugin.url_for('play', kind=kind, program_id=program_id)
+        return self.build_item(path, True)
+
     def build_item(self, path, is_playable):
         basic_item = super()._build_item(path, is_playable)
         if basic_item is None:
@@ -355,3 +440,12 @@ class ArteCollectionItem(ArteItem):
                 'plotoutline': item.get('teaserText')
             }
         }
+
+    def build_collection_or_hbbtv_item(self, settings):
+        """Return entry menu for video or playlist"""
+        item = self.json_dict
+        if ArteVideoItem(self.plugin, settings, item).is_playlist():
+            item = ArteCollectionItem(self.plugin, item).map_collection_as_menu_item()
+        else:
+            item = ArteHbbTvVideoItem(self.plugin, settings, item).map_item()
+        return item

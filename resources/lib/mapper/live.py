@@ -1,6 +1,6 @@
 """
 Module for ArteLiveItem depends on ArteTvVideoItem and mapper module
-for map_playable and match_hbbtv
+for map_playable and match_artetv
 """
 
 import html
@@ -58,7 +58,7 @@ class ArteLiveItem(ArteTvVideoItem):
             # while it starts the video like the live tv, with the above
             #  'path': plugin.url_for('play', kind='SHOW', program_id=programId.replace('_fr', '')),
             'thumbnail': thumbnail_url,
-            'is_playable': True,  # not show_video_streams
+            'is_playable': True,
             'info_type': 'video',
             'info': {
                 'title': meta.get('title'),

@@ -30,7 +30,7 @@ class ArteCollection:
         # Abstract class should NOT be instantiated
         # pylint: disable=assignment-from-none
         meta = self._get_page_meta(json_dict)
-        items = [ArteTvVideoItem(self.plugin, item).map_artetv_item() for item in pages]
+        items = [ArteTvVideoItem(self.plugin, self.settings, item).map_item() for item in pages]
         if meta and meta.get('pages', False):
             total_pages = meta.get('pages')
             current_page = meta.get('page')

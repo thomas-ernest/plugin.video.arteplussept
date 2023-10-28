@@ -36,16 +36,17 @@ from resources.lib.player import Player
 from resources.lib.settings import Settings
 
 # global declarations
-# plugin stuff
-plugin = Plugin()
+CACHE_TTL = 2880
 
+plugin = Plugin()
 settings = Settings(plugin)
 
 
 @plugin.route('/', name='index')
 def index():
     """Display home menu"""
-    return view.build_home_page(plugin, settings, plugin.get_storage('cached_categories', TTL=60))
+    return view.build_home_page(
+        plugin, settings, plugin.get_storage('cached_categories', TTL=CACHE_TTL))
 
 
 @plugin.route('/api_category/<category_code>', name='api_category')
@@ -58,13 +59,13 @@ def api_category(category_code):
 def cached_category(zone_id):
     """Display the menu for a category that is stored
     in cache from previous api call like home page"""
-    return view.get_cached_category(zone_id, plugin.get_storage('cached_categories', TTL=60))
+    return view.get_cached_category(zone_id, plugin.get_storage('cached_categories', TTL=CACHE_TTL))
 
 
 @plugin.route('/category_page/<zone_id>/<page>/<page_id>', name='category_page')
 def category_page(zone_id, page, page_id):
     """Display the menu for a category that needs an api call"""
-    return ArteZone(plugin, settings, plugin.get_storage('cached_categories', TTL=60)) \
+    return ArteZone(plugin, settings, plugin.get_storage('cached_categories', TTL=CACHE_TTL)) \
         .build_menu(zone_id, page, page_id)
 
 
@@ -145,13 +146,7 @@ def purge_last_viewed():
 def display_collection(kind, program_id):
     """Display menu for collection of content"""
     plugin.set_content('tvshows')
-    return plugin.finish(view.build_mixed_collection(plugin, kind, program_id, settings))
-
-
-@plugin.route('/streams/<program_id>', name='streams')
-def streams(program_id):
-    """Play a multi language content."""
-    return plugin.finish(view.build_video_streams(plugin, settings, program_id))
+    return plugin.finish(view.build_collection_menu_tree(plugin, settings, kind, program_id))
 
 
 @plugin.route('/play_live/<stream_url>', name='play_live')
@@ -179,16 +174,22 @@ def play(kind, program_id, audio_slot='1', from_playlist='0'):
     synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
     # try to seek parent collection, when out of the context of playlist creation
     sibling_playlist = None
+
     if from_playlist == '0':
         sibling_playlist = view.build_sibling_playlist(plugin, settings, program_id)
+    item = None
     if sibling_playlist is not None and len(sibling_playlist['collection']) > 1:
         # Empty playlist, otherwise requested video is present twice in the playlist
         xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
         # Start playing with the first playlist item
-        result = plugin.set_resolved_url(plugin.add_to_playlist(sibling_playlist['collection'])[0])
+        item = plugin.add_to_playlist(sibling_playlist['collection'])[0]
+        result = plugin.set_resolved_url(item)
     else:
         item = view.build_stream_url(plugin, kind, program_id, int(audio_slot), settings)
         result = plugin.set_resolved_url(item)
+    # Needed to play from context menu for multilanguage support
+    plugin.play_video(item)
+    # Needed to synch with Arte tv account
     synch_during_playback(synched_player)
     del synched_player
     return result
