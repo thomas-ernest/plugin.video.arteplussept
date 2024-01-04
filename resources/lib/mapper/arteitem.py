@@ -59,7 +59,7 @@ class ArteVideoItem(ArteItem):
         return {
             'label': label,
             'path': path,
-            'thumbnail': self._get_image_url(),
+            'thumbnail': self._get_image_url('480x270', True),
             'is_playable': is_playable,
             'info_type': 'video',
             'info': {
@@ -70,7 +70,7 @@ class ArteVideoItem(ArteItem):
                 'aired': self._get_air_date()
             },
             'properties': {
-                'fanart_image': self._get_image_url(),
+                'fanart_image': self._get_image_url('1920x1080', False),
                 'TotalTime': str(self._get_duration()),
             },
             'context_menu': [
@@ -109,7 +109,7 @@ class ArteVideoItem(ArteItem):
         """
         return None
 
-    def _get_image_url(self):
+    def _get_image_url(self, wished_res, wished_text):
         """
         Abstract method to be implemented in child classes.
         Return url to image to display for the current item.
@@ -208,7 +208,7 @@ class ArteTvVideoItem(ArteVideoItem):
                     'playcount': '1' if progress >= 0.95 else '0',
                 },
                 'properties': {
-                    'fanart_image': self._get_image_url(),
+                    'fanart_image': self._get_image_url('1920x1080', False),
                     # ResumeTime and TotalTime deprecated.
                     # Use InfoTagVideo.setResumePoint() instead.
                     'ResumeTime': str(self._get_time_offset()),
@@ -238,20 +238,27 @@ class ArteTvVideoItem(ArteVideoItem):
             date = None
         return date
 
-    def _get_image_url(self):
+    def _get_image_url(self, wished_res, wished_text):
         item = self.json_dict
         image_url = None
+        # extracting image from arte tv player endpoint
         if item.get('images') and item.get('images')[0] and item.get('images')[0].get('url'):
-            # Remove query param type=TEXT to avoid title embeded in image
-            image_url = item.get('images')[0].get('url').replace('?type=TEXT', '')
-            # Set same image for fanart and thumbnail to spare network bandwidth
-            # and business logic easier to maintain
-            # if item.get('images')[0].get('alternateResolutions'):
-            #    smallerImage = item.get('images')[0].get('alternateResolutions')[3]
-            #    if smallerImage and smallerImage.get('url'):
-            #        thumbnailUrl = smallerImage.get('url').replace('?type=TEXT', '')
-        if not image_url:
-            image_url = item.get('mainImage').get('url').replace('__SIZE__', '1920x1080')
+            image_url = item.get('images')[0].get('url')
+        # extracting image from content data from arte tv home page or zone endpoint
+        if item.get('mainImage') and item.get('mainImage').get('url'):
+            image_url = item.get('mainImage').get('url')
+
+        # post processing
+        if isinstance(image_url, str):
+            if wished_text is False:
+                # Remove query param type=TEXT to avoid title embeded in image
+                image_url = image_url.replace('?type=TEXT', '')
+            if isinstance(wished_res, str):
+                # 940x530 is the most common size from player endpoint
+                # __SIZE__ is the size from home page or zone endpoint
+                for from_str in ['/940x530', '/__SIZE__']:
+                    image_url = image_url.replace(from_str, f"/{wished_res}")
+
         return image_url
 
     def _get_kind(self):
@@ -326,7 +333,8 @@ class ArteHbbTvVideoItem(ArteVideoItem):
                 level=xbmc.LOGWARNING)
         return date
 
-    def _get_image_url(self):
+    def _get_image_url(self, wished_res, wished_text):
+        # parameter are ignored in HBB TV, but needed for abstraction | inheritance
         return self.json_dict.get('imageUrl')
 
     def _get_kind(self):
