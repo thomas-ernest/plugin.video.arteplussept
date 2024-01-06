@@ -15,7 +15,7 @@
 			values="Low|Medium|High"
 			default="2"/>
 		<setting
-			id="show_video_streams"
+			id="multilanguage"
 			type="bool"
 			label="30053"
 			default="false"/>
