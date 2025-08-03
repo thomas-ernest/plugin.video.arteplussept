@@ -2,7 +2,7 @@
 
 import dataclasses
 
-languages = ['fr', 'de', 'en', 'es', 'pl', 'it']
+languages = ['fr', 'de', 'en', 'es', 'pl', 'it', 'ro']
 # though misleqding the below mapping is correct e.g. SQ is High Quality 720p
 # dict keys must be in same order as in settings.xml
 quality_map = {'Low': 'HQ', 'Medium': 'EQ', 'High': 'SQ'}

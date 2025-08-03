@@ -6,7 +6,7 @@
 			id="lang"
 			type="enum"
 			label="30050"
-			values="fr|de|en|es|pl|it"
+			values="fr|de|en|es|pl|it|ro"
 			default="0"/>
 		<setting
 			id="quality"
