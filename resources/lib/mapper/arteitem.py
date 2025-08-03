@@ -307,7 +307,7 @@ class ArteHbbTvVideoItem(ArteVideoItem):
                 # year is not correctly used by kodi :(
                 # the aired year will be used by kodi for production year :(
                 # 'year': int(config.get('productionYear')),
-                'country': [country.get('label') for country in \
+                'country': [country.get('label') for country in
                             item.get('productionCountries', [])],
                 'director': item.get('director'),
             },
