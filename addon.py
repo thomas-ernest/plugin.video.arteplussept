@@ -154,13 +154,14 @@ def streams(program_id):
     return plugin.finish(view.build_video_streams(plugin, settings, program_id))
 
 
-@plugin.route('/play_live/<stream_url>', name='play_live')
-def play_live(stream_url):
-    """Play live content."""
-    return plugin.set_resolved_url({'path': stream_url})
-
 # Cannot read video new arte tv program API. Blocked by FFMPEG issue #10149
 # @plugin.route('/play_artetv/<program_id>', name='play_artetv')
+#
+# @plugin.route('/play_live/<stream_url>', name='play_live')
+# def play_live(stream_url):
+#    """Play live content."""
+#    return plugin.set_resolved_url({'path': stream_url})
+#
 # def play_artetv(program_id):
 #     item = api.player_video(settings.language, program_id)
 #     attr = item.get('attributes')
