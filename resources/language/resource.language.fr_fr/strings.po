@@ -27,8 +27,8 @@ msgid "Stream video quality"
 msgstr "Qualité vidéo préferée"
 
 msgctxt "#30053"
-msgid "Show video stream options"
-msgstr "Afficher les options de flux vidéo"
+msgid "Show multi-language streams in context menu"
+msgstr "Afficher les flux multi-langue dans le menu contextuel"
 
 msgctxt "#30054"
 msgid "Email"

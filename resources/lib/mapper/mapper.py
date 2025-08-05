@@ -5,8 +5,6 @@ from resources.lib import hof
 from resources.lib import utils
 from resources.lib.mapper.arteitem import ArteVideoItem
 from resources.lib.mapper.arteitem import ArteTvVideoItem
-from resources.lib.mapper.arteitem import ArteHbbTvVideoItem
-from resources.lib.mapper.arteitem import ArteCollectionItem
 from resources.lib.mapper.artezone import ArteZone
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
@@ -26,18 +24,7 @@ def map_category_item(plugin, item, category_code):
     }
 
 
-def map_generic_item(plugin, item, show_video_streams):
-    """Return entry menu for video or playlist"""
-    if ArteVideoItem(plugin, item).is_playlist():
-        item = ArteCollectionItem(plugin, item).map_collection_as_menu_item()
-    elif show_video_streams is True:
-        item = map_video_streams_as_menu(plugin, item)
-    else:
-        item = map_video_as_item(plugin, item)
-    return item
-
-
-def map_collection_as_playlist(plugin, arte_collection, req_start_program_id=None):
+def map_collection_as_playlist(plugin, settings, arte_collection, req_start_program_id=None):
     """
     Map a collection from arte API to a list of items ready to build a playlist.
     Playlist item will be in the same order as arte_collection, if start_program_id
@@ -51,7 +38,7 @@ def map_collection_as_playlist(plugin, arte_collection, req_start_program_id=Non
     # assume arte_collection[0] will be mapped successfully with map_video_as_playlist_item
     start_program_id = arte_collection[0].get('programId')
     for arte_item in arte_collection or []:
-        xbmc_item = map_video_as_playlist_item(plugin, arte_item)
+        xbmc_item = map_video_as_playlist_item(plugin, settings, arte_item)
         if xbmc_item is None:
             break
 
@@ -59,7 +46,7 @@ def map_collection_as_playlist(plugin, arte_collection, req_start_program_id=Non
         if before_start:
             if req_start_program_id is None:
                 # start from the first element not fully viewed
-                if ArteTvVideoItem(plugin, arte_item).get_progress() < 0.95:
+                if ArteTvVideoItem(plugin, settings, arte_item).get_progress() < 0.95:
                     before_start = False
                     start_program_id = arte_item.get('programId')
             else:
@@ -78,7 +65,7 @@ def map_collection_as_playlist(plugin, arte_collection, req_start_program_id=Non
     }
 
 
-def map_video_as_playlist_item(plugin, item):
+def map_video_as_playlist_item(plugin, settings, item):
     """
     Create a video menu item without recursiveness to fetch parent collection
     from a json returned by Arte HBBTV or ArteTV API
@@ -90,56 +77,8 @@ def map_video_as_playlist_item(plugin, item):
 
     path = plugin.url_for(
         'play_siblings', kind=kind, program_id=program_id, audio_slot='1', from_playlist='1')
-    result = ArteVideoItem(plugin, item).build_item(path, True)
+    result = ArteVideoItem(plugin, settings, item).build_item(path, True)
     return result
-
-
-def map_video_streams_as_menu(plugin, item):
-    """Create a menu item for video streams from a json returned by Arte HBBTV API"""
-    program_id = item.get('programId')
-    path = plugin.url_for('streams', program_id=program_id)
-    return ArteHbbTvVideoItem(plugin, item).build_item(path, False)
-
-
-def map_video_as_item(plugin, item):
-    """Create a playable video menu item from a json returned by Arte HBBTV API"""
-    program_id = item.get('programId')
-    kind = item.get('kind')
-    path = plugin.url_for('play', kind=kind, program_id=program_id)
-    return ArteHbbTvVideoItem(plugin, item).build_item(path, True)
-
-
-def map_streams(plugin, item, streams, quality):
-    """Map JSON item and list of audio streams into a menu."""
-    program_id = item.get('programId')
-    kind = item.get('kind')
-
-    video_item = map_video_as_item(plugin, item)
-
-    filtered_streams = None
-    for qlt in [quality] + [i for i in ['SQ', 'EQ', 'HQ', 'MQ'] if i is not quality]:
-        filtered_streams = [s for s in streams if s.get('quality') == qlt]
-        if len(filtered_streams) > 0:
-            break
-
-    if filtered_streams is None or len(filtered_streams) == 0:
-        raise RuntimeError('Could not resolve stream...')
-
-    sorted_filtered_streams = sorted(
-        filtered_streams, key=lambda s: s.get('audioSlot'))
-
-    def map_stream(video_item, stream):
-        audio_slot = stream.get('audioSlot')
-        audio_label = stream.get('audioLabel')
-
-        video_item['label'] = audio_label
-        video_item['is_playable'] = True
-        video_item['path'] = plugin.url_for(
-            'play_specific', kind=kind, program_id=program_id, audio_slot=str(audio_slot))
-
-        return video_item
-
-    return [map_stream(dict(video_item), stream) for stream in sorted_filtered_streams]
 
 
 def map_zone_to_item(plugin, settings, zone, cached_categories):

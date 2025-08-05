@@ -32,7 +32,7 @@ class ArteCollection:
         meta = self._get_page_meta(json_dict)
         items = []
         for page_item in pages:
-            menu_item = ArteTvVideoItem(self.plugin, page_item).map_artetv_item()
+            menu_item = ArteTvVideoItem(self.plugin, self.settings, page_item).map_item()
             if menu_item is not None:
                 items.append(menu_item)
         if meta and meta.get('pages', False):
