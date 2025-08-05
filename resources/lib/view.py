@@ -20,7 +20,7 @@ def build_home_page(plugin, settings, cached_categories):
     try:
         addon_menu.append(
             ArteLiveItem(plugin, api.player_video(settings.language, 'LIVE'))
-            .build_item_live(settings.quality, '1'))
+            .build_item_live())
     # pylint: disable=broad-exception-caught
     # Could be improve. possible exceptions are limited to auth. errors
     except Exception as error:
