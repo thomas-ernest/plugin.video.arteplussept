@@ -23,8 +23,8 @@ class Settings:
             'quality', choices=list(quality_map.keys()))] or quality_map['High']
         # Should the plugin display all available streams for videos?
         # defaults to False
-        self.show_video_streams = plugin.get_setting(
-            'show_video_streams', bool) or False
+        self.multilanguage = plugin.get_setting(
+            'multilanguage', bool) or False
         # Arte TV user name
         # defaults to empty string to return false with if not str
         self.username = plugin.get_setting(

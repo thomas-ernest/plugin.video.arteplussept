@@ -119,6 +119,11 @@ def is_logged_in_as(plugin):
     return usr
 
 
+def is_logged_in(plugin, settings):
+    """Return True if a token exists for the configured user, False otherwise"""
+    return get_cached_token(plugin, settings.username, True) is not None
+
+
 def get_cached_token(plugin, token_idx, silent=False):
     """
     Return cached token for identified user or None.
