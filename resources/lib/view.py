@@ -36,14 +36,6 @@ def build_home_page(plugin, settings, cached_categories):
     return addon_menu
 
 
-def build_api_category(plugin, category_code, settings):
-    """Build the menu for a category that needs an api call"""
-    category = [mapper.map_category_item(plugin, item, category_code) for item in
-                api.category(category_code, settings.language)]
-
-    return category
-
-
 def get_cached_category(zone_id, cached_categories):
     """Return the menu for a category that is stored
     in cache from previous api call like home page"""

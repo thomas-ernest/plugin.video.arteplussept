@@ -28,6 +28,7 @@ from xbmcswift2 import Plugin
 from xbmcswift2 import xbmc
 from resources.lib import user
 from resources.lib import view
+from resources.lib.mapper.arteapicategory import ArteApiCategory
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
 from resources.lib.mapper.artesearch import ArteSearch
@@ -51,8 +52,9 @@ def index():
 @plugin.route('/api_category/<category_code>', name='api_category')
 def api_category(category_code):
     """Display the menu for a category that needs an api call"""
-    return view.build_api_category(plugin, category_code, settings)
-
+    return ArteApiCategory(plugin, settings,
+                           plugin.get_storage('cached_categories', TTL=60)) \
+        .build_menu(category_code)
 
 @plugin.route('/cached_category/<zone_id>', name='cached_category')
 def cached_category(zone_id):
