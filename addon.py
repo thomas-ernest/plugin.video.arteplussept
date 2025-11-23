@@ -56,6 +56,7 @@ def api_category(category_code):
                            plugin.get_storage('cached_categories', TTL=60)) \
         .build_menu(category_code)
 
+
 @plugin.route('/cached_category/<zone_id>', name='cached_category')
 def cached_category(zone_id):
     """Display the menu for a category that is stored
