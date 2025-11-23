@@ -1,5 +1,10 @@
 Changelog also available in file ./addon.xml xpath /addon/extension/news following Kodi guidelines https://kodi.wiki/view/Add-on_structure#changelog.txt
 
+v1.4.4 (2025-11-24)
+- Fix home page display
+- Fix authentication by preventing persisting token
+- Fix category available through link i.e. API call to HBBTV
+
 v1.4.3 (2025-8-4)
 - Fix playing live stream (disabling HLS).
 
