@@ -362,9 +362,10 @@ def get_and_persist_token_in_arte(plugin, username, password):
     if not tokens:
         return None
 
+    # Disable failing persisting token due to new SSO v4
     # try to persist token in arte to be allowed to reuse; otherwise token is one-shot
-    if not persist_token_in_arte(plugin, tokens):
-        return None
+    # if not persist_token_in_arte(plugin, tokens):
+    #    return None
 
     # return persisted or unpersisted token anyway
     return tokens

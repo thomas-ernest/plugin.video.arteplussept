@@ -159,8 +159,7 @@ class ArteTvVideoItem(ArteVideoItem):
         Return video menu item to show content from Arte TV API.
         Manage specificities of various types : playlist, menu or video items
         """
-        item = self.json_dict
-        program_id = item.get('programId')
+        program_id = self._get_program_id()
         kind = self._get_kind()
         if kind == 'EXTERNAL':
             return None
@@ -286,6 +285,19 @@ class ArteTvVideoItem(ArteVideoItem):
     def _get_time_offset(self):
         item = self.json_dict
         return item.get('lastviewed') and item.get('lastviewed').get('timecode') or 0
+
+    def _get_program_id(self):
+        """
+        Return item program's identifier or
+        item's identifier and fix JSON dictionary if None in some playlist
+        """
+        item = self.json_dict
+        program_id = item.get('programId')
+        if program_id is None:
+            program_id = item.get('id')
+            item['programId'] = program_id
+
+        return program_id
 
 
 class ArteHbbTvVideoItem(ArteVideoItem):
