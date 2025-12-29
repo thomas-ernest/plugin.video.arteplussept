@@ -28,6 +28,8 @@ from xbmcswift2 import Plugin
 from xbmcswift2 import xbmc
 from resources.lib import user
 from resources.lib import view
+from resources.lib.utils import DisplayType
+from resources.lib.utils import PlayFrom
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
 from resources.lib.mapper.artesearch import ArteSearch
@@ -45,7 +47,11 @@ settings = Settings(plugin)
 @plugin.route('/', name='index')
 def index():
     """Display home menu"""
-    return view.build_home_page(plugin, settings, plugin.get_storage('cached_categories', TTL=60))
+    return view.build_home_page(
+        plugin, settings,
+        plugin.get_storage('cached_categories', TTL=60),
+        plugin.get_storage('cached_live_streams', TTL=60)
+    )
 
 
 @plugin.route('/api_category/<category_code>', name='api_category')
@@ -58,7 +64,7 @@ def api_category(category_code):
 def cached_category(zone_id):
     """Display the menu for a category that is stored
     in cache from previous api call like home page"""
-    return view.get_cached_category(zone_id, plugin.get_storage('cached_categories', TTL=60))
+    return plugin.get_storage('cached_categories', TTL=60)[zone_id]
 
 
 @plugin.route('/category_page/<zone_id>/<page>/<page_id>', name='category_page')
@@ -141,38 +147,34 @@ def purge_last_viewed():
     ArteHistory(plugin, settings).purge()
 
 
-@plugin.route('/display_collection/<kind>/<program_id>', name='display_collection')
-def display_collection(kind, program_id):
+@plugin.route('/display/<program_type>/<kind>/<program_id>', name='display')
+def display(program_type, kind, program_id):
     """Display menu for collection of content"""
     plugin.set_content('tvshows')
-    return plugin.finish(view.build_mixed_collection(plugin, kind, program_id, settings))
-
-
-@plugin.route('/streams/<program_id>', name='streams')
-def streams(program_id):
-    """Play a multi language content."""
-    return plugin.finish(view.build_video_streams(plugin, settings, program_id))
+    result = None
+    if program_type == DisplayType.COL.value:
+        result = plugin.finish(view.build_mixed_collection(plugin, kind, program_id, settings))
+    elif program_type == DisplayType.ITM.value:
+        result = plugin.finish(view.build_video_streams(plugin, settings, program_id))
+    # Error case possible by code mistake, not by user or api data
+    return result
 
 
 # Cannot read video new arte tv program API. Blocked by FFMPEG issue #10149
 # @plugin.route('/play_artetv/<program_id>', name='play_artetv')
 #
-# @plugin.route('/play_live/<stream_url>', name='play_live')
-# def play_live(stream_url):
-#    """Play live content."""
-#    return plugin.set_resolved_url({'path': stream_url})
-#
-# def play_artetv(program_id):
-#     item = api.player_video(settings.language, program_id)
-#     attr = item.get('attributes')
-#     streamUrl=attr.get('streams')[0].get('url')
-#     return plugin.set_resolved_url({'path': streamUrl})
+@plugin.route('/play_live', name='play_live')
+def play_live():
+    """Play live content."""
+    stream_item = view.build_live_stream_url(
+        settings, plugin.get_storage('cached_live_streams', TTL=60)['live'], '1')
+    return plugin.set_resolved_url(stream_item)
 
 
 @plugin.route('/play/<kind>/<program_id>', name='play')
-@plugin.route('/play/<kind>/<program_id>/<audio_slot>', name='play_specific')
-@plugin.route('/play/<kind>/<program_id>/<audio_slot>/<from_playlist>', name='play_siblings')
-def play(kind, program_id, audio_slot='1', from_playlist='0'):
+@plugin.route('/play/<kind>/<program_id>/<play_from>', name='play_from')
+@plugin.route('/play/<kind>/<program_id>/<play_from>/<audio_slot>', name='play_specific')
+def play(kind, program_id, play_from=PlayFrom.ITM, audio_slot='1'):
     """Play content identified with program_id.
     :param str kind: an enum in TODO (e.g. TRAILER, COLLECTION, LINK, CLIP, ...)
     :param str audio_slot: a numeric to identify the audio stream to use e.g. 1 2
@@ -180,7 +182,7 @@ def play(kind, program_id, audio_slot='1', from_playlist='0'):
     synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
     # try to seek parent collection, when out of the context of playlist creation
     sibling_playlist = None
-    if from_playlist == '0':
+    if play_from == PlayFrom.LST.value:
         sibling_playlist = view.build_sibling_playlist(plugin, settings, program_id)
     if sibling_playlist is not None and len(sibling_playlist['collection']) > 1:
         # Empty playlist, otherwise requested video is present twice in the playlist
@@ -188,8 +190,11 @@ def play(kind, program_id, audio_slot='1', from_playlist='0'):
         # Start playing with the first playlist item
         result = plugin.set_resolved_url(plugin.add_to_playlist(sibling_playlist['collection'])[0])
     else:
-        item = view.build_stream_url(plugin, kind, program_id, int(audio_slot), settings)
-        result = plugin.set_resolved_url(item)
+        item = view.build_stream_url(plugin, settings, kind, program_id, int(audio_slot))
+        if play_from == PlayFrom.CTX.value:
+            result = plugin.play_video(item)
+        else:
+            result = plugin.set_resolved_url(item)
     synch_during_playback(synched_player)
     del synched_player
     return result

@@ -47,6 +47,10 @@ msgid "Log out"
 msgstr "Austragen"
 
 
+msgctxt "#30010"
+msgid "Play from the beginning"
+msgstr "Ab Anfang spielen"
+
 msgctxt "#30011"
 msgid "View collection as menu"
 msgstr "Sammlung als Menü anzeigen"

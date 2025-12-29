@@ -47,6 +47,11 @@ msgid "Log out"
 msgstr "Deconectare"
 
 
+
+msgctxt "#30010"
+msgid "Play from the beginning"
+msgstr "Joacă de la început"
+
 msgctxt "#30011"
 msgid "View collection as menu"
 msgstr "Vizualizare colecție ca meniu"

@@ -52,6 +52,10 @@ msgid "View collection as menu"
 msgstr "Zobacz kolekcję jako menu"
 
 
+msgctxt "#30010"
+msgid "Play from the beginning"
+msgstr "Od początku czytaj"
+
 msgctxt "#30012"
 msgid "Search"
 msgstr "Wyszukiwanie"

@@ -1,5 +1,19 @@
 """Utility methods mainly to format strings and manipulate date"""
 import urllib.parse
+from enum import Enum
+
+
+class DisplayType(Enum):
+    """Define program display types for Arte content into Kodi menu"""
+    COL = 'collection'
+    ITM = 'item'
+
+
+class PlayFrom(Enum):
+    """Define from where the play request is initiated"""
+    ITM = 'item'
+    LST = 'playlist'
+    CTX = 'context_menu'
 
 
 def encode_string(string):

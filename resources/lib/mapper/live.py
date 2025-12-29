@@ -1,11 +1,14 @@
 """
-Module for ArteLiveItem depends on ArteTvVideoItem and mapper module
-for map_playable and match_hbbtv
+Module for ArteLiveItem depends on ArteTvVideoItem
+Add specificities for live stream from Arte TV API.
 """
 
 import html
+# pylint: disable=import-error
+from xbmcswift2 import actions
 # the goal is to break/limit this dependency as much as possible
 from resources.lib.mapper.arteitem import ArteTvVideoItem
+from resources.lib.utils import PlayFrom
 
 
 class ArteLiveItem(ArteTvVideoItem):
@@ -26,10 +29,10 @@ class ArteLiveItem(ArteTvVideoItem):
             label += f" - {html.unescape(subtitle)}"
         return label
 
-    def build_item_live(self):
+    def build_item_live(self, live_cache):
         """Return menu entry to watch live content from Arte TV API"""
         item = self.json_dict
-        # Remove language at the end e.g. _fr, _de
+        # Remove language at the end to match program id e.g. _fr, _de
         program_id = item.get('id')[:-3]
         attr = item.get('attributes')
         meta = attr.get('metadata')
@@ -42,31 +45,28 @@ class ArteLiveItem(ArteTvVideoItem):
             # Remove query param type=TEXT to avoid title embeded in image
             fanart_url = meta.get('images')[0].get('url').replace('?type=TEXT', '')
             thumbnail_url = fanart_url
-            # Set same image for fanart and thumbnail to spare network bandwidth
-            # and business logic easier to maintain
-            # if item.get('images')[0].get('alternateResolutions'):
-            #    smallerImage = item.get('images')[0].get('alternateResolutions')[3]
-            #    if smallerImage and smallerImage.get('url'):
-            #        thumbnailUrl = smallerImage.get('url').replace('?type=TEXT', '')
 
+        # set live streams in cache for play_live route to use it
+        live_cache['live'] = attr.get('streams')
+
+        # the route "play_live" starts the live directly (thanks to cached streams)
+        # while the route "play" in context menu starts the program from the beginning
         return {
             'label': self.format_title_and_subtitle(),
-            'path': self.plugin.url_for('play', kind='SHOW', program_id=program_id),
-            # playing the stream from program id makes the live starts from the beginning
-            # while it starts the video like the live tv, with the above
-            #  'path': plugin.url_for('play', kind='SHOW', program_id=programId.replace('_fr', '')),
+            'path': self.plugin.url_for('play_live'),
             'thumbnail': thumbnail_url,
+            'fanart': fanart_url,
             'is_playable': True,  # not show_video_streams
             'info_type': 'video',
             'info': {
                 'title': meta.get('title'),
                 'duration': duration,
                 'plot': meta.get('description'),
-                # 'director': item.get('director'),
-                # 'aired': airdate
                 'playcount': '0',
             },
-            'properties': {
-                'fanart_image': fanart_url,
-            }
+            'context_menu': [(
+                self.plugin.addon.getLocalizedString(30010),
+                actions.background(self.plugin.url_for(
+                    'play_from', kind='SHOW', program_id=program_id, play_from=PlayFrom.CTX.value))
+            )]
         }

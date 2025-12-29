@@ -47,6 +47,10 @@ msgid "Log out"
 msgstr "Disconnessione"
 
 
+msgctxt "#30010"
+msgid "Play from the beginning"
+msgstr "Gioca dall'inizio"
+
 msgctxt "#30011"
 msgid "View collection as menu"
 msgstr "Visualizza la raccolta come menu"

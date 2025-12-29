@@ -3,6 +3,8 @@
 from xbmcswift2 import xbmc
 from resources.lib import hof
 from resources.lib import utils
+from resources.lib.utils import DisplayType
+from resources.lib.utils import PlayFrom
 from resources.lib.mapper.arteitem import ArteVideoItem
 from resources.lib.mapper.arteitem import ArteTvVideoItem
 from resources.lib.mapper.arteitem import ArteHbbTvVideoItem
@@ -89,7 +91,7 @@ def map_video_as_playlist_item(plugin, item):
         kind = kind.get('code')
 
     path = plugin.url_for(
-        'play_siblings', kind=kind, program_id=program_id, audio_slot='1', from_playlist='1')
+        'play_from', kind=kind, program_id=program_id, play_from=PlayFrom.LST.value)
     result = ArteVideoItem(plugin, item).build_item(path, True)
     return result
 
@@ -97,7 +99,9 @@ def map_video_as_playlist_item(plugin, item):
 def map_video_streams_as_menu(plugin, item):
     """Create a menu item for video streams from a json returned by Arte HBBTV API"""
     program_id = item.get('programId')
-    path = plugin.url_for('streams', program_id=program_id)
+    kind = item.get('kind')
+    path = plugin.url_for(
+        'display', program_type=DisplayType.ITM.value, kind=kind, program_id=program_id)
     return ArteHbbTvVideoItem(plugin, item).build_item(path, False)
 
 
@@ -115,6 +119,8 @@ def map_streams(plugin, item, streams, quality):
     kind = item.get('kind')
 
     video_item = map_video_as_item(plugin, item)
+    if video_item is None:
+        raise RuntimeError('Could not resolve video item...')
 
     filtered_streams = None
     for qlt in [quality] + [i for i in ['SQ', 'EQ', 'HQ', 'MQ'] if i is not quality]:
@@ -135,11 +141,12 @@ def map_streams(plugin, item, streams, quality):
         video_item['label'] = audio_label
         video_item['is_playable'] = True
         video_item['path'] = plugin.url_for(
-            'play_specific', kind=kind, program_id=program_id, audio_slot=str(audio_slot))
+            'play_specific', kind=kind, program_id=program_id,
+            play_from=PlayFrom.ITM.value, audio_slot=str(audio_slot))
 
         return video_item
 
-    return [map_stream(dict(video_item), stream) for stream in sorted_filtered_streams]
+    return [map_stream(video_item, stream) for stream in sorted_filtered_streams]
 
 
 def map_zone_to_item(plugin, settings, zone, cached_categories):

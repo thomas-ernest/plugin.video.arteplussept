@@ -12,7 +12,7 @@ from resources.lib import settings as stg
 from resources.lib import user
 
 
-def build_home_page(plugin, settings, cached_categories):
+def build_home_page(plugin, settings, cached_categories, live_cache):
     """Display home menu based on fixed entries and then content from API home page"""
     addon_menu = [
         ArteSearch(plugin, settings).build_item()
@@ -20,7 +20,7 @@ def build_home_page(plugin, settings, cached_categories):
     try:
         addon_menu.append(
             ArteLiveItem(plugin, api.player_video(settings.language, 'LIVE'))
-            .build_item_live())
+            .build_item_live(live_cache))
     # pylint: disable=broad-exception-caught
     # Could be improve. possible exceptions are limited to auth. errors
     except Exception as error:
@@ -40,14 +40,7 @@ def build_api_category(plugin, category_code, settings):
     """Build the menu for a category that needs an api call"""
     category = [mapper.map_category_item(plugin, item, category_code) for item in
                 api.category(category_code, settings.language)]
-
     return category
-
-
-def get_cached_category(zone_id, cached_categories):
-    """Return the menu for a category that is stored
-    in cache from previous api call like home page"""
-    return cached_categories[zone_id]
 
 
 def mark_as_watched(plugin, usr, program_id, label):
@@ -127,7 +120,7 @@ def build_collection_playlist(plugin, settings, kind, collection_id):
         kind, collection_id))
 
 
-def build_stream_url(plugin, kind, program_id, audio_slot, settings):
+def build_stream_url(plugin, settings, kind, program_id, audio_slot):
     """
     Return URL to stream content.
     If the content is not available, it tries to return a related trailer or teaser.
@@ -147,3 +140,11 @@ def build_stream_url(plugin, kind, program_id, audio_slot, settings):
     msg = plugin.addon.getLocalizedString(30029)
     plugin.notify(msg=msg.format(strm=program_id, ln=settings.language), image='error')
     return None
+
+
+def build_live_stream_url(settings, live_streams, audio_slot):
+    """
+    Return URL to stream live content.
+    If the content is not available, it tries to return a related trailer or teaser.
+    """
+    return mapper.map_playable(live_streams, settings.quality, audio_slot, mapper.match_artetv)

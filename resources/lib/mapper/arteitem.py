@@ -10,6 +10,7 @@ import dateutil.parser
 from xbmcswift2 import xbmc
 # pylint: disable=import-error
 from xbmcswift2 import actions
+from resources.lib.utils import DisplayType
 
 
 # pylint: disable=too-few-public-methods
@@ -60,6 +61,7 @@ class ArteVideoItem(ArteItem):
             'label': label,
             'path': path,
             'thumbnail': self._get_image_url('480x270', True),
+            'fanart': self._get_image_url('1920x1080', False),
             'is_playable': is_playable,
             'info_type': 'video',
             'info': {
@@ -67,12 +69,11 @@ class ArteVideoItem(ArteItem):
                 'duration': self._get_duration(),
                 'plot': item.get('shortDescription') or item.get('fullDescription'),
                 'plotoutline': item.get('teaserText'),
-                'aired': self._get_air_date()
+                'aired': self._get_air_date(),
             },
-            'properties': {
-                'fanart_image': self._get_image_url('1920x1080', False),
-                'TotalTime': str(self._get_duration()),
-            },
+            # 'properties': {
+            #    'TotalTime': str(self._get_duration()),
+            # },
             'context_menu': [
                 (self.plugin.addon.getLocalizedString(30023),
                     actions.background(self.plugin.url_for(
@@ -174,10 +175,12 @@ class ArteTvVideoItem(ArteVideoItem):
                     self.plugin.addon.getLocalizedString(30011),
                     actions.update_view(
                         self.plugin.url_for(
-                            'display_collection', program_id=program_id, kind=kind)))]
+                            'display', program_type=DisplayType.COL.value,
+                            kind=kind, program_id=program_id)))]
             else:
                 # content_type = Content.MENU_ITEM
-                path = self.plugin.url_for('display_collection', kind=kind, program_id=program_id)
+                path = self.plugin.url_for(
+                    'display', program_type=DisplayType.COL.value, kind=kind, program_id=program_id)
                 is_playable = False
         else:
             # content_type = Content.VIDEO
@@ -203,20 +206,23 @@ class ArteTvVideoItem(ArteVideoItem):
         duration = self._get_duration()
         if self.json_dict.get('lastviewed', False) and duration is not None:
             artetv_item = {
+                'fanart': self._get_image_url('1920x1080', False),
+                'info_type': 'video',
                 'info': {
                     'playcount': '1' if progress >= 0.95 else '0',
                 },
                 'properties': {
-                    'fanart_image': self._get_image_url('1920x1080', False),
                     # ResumeTime and TotalTime deprecated.
                     # Use InfoTagVideo.setResumePoint() instead.
+                    # Not supported in xbmcswift2. To be set on generated xbmc ListItem.
                     'ResumeTime': str(self._get_time_offset()),
                     'TotalTime': str(self._get_duration()),
-                    'StartPercent': str(float(self._get_time_offset()) * 100.0 / float(duration))
+                    'StartPercent': str(float(self._get_time_offset()) * 100.0 / float(duration)),
                 },
             }
             basic_item['info'] = {**basic_item['info'], **artetv_item['info']}
-            basic_item['properties'] = {**basic_item['properties'], **artetv_item['properties']}
+            # basic_item['properties'] = {**basic_item['properties'], **artetv_item['properties']}
+            basic_item['properties'] = artetv_item['properties']
 
         return basic_item
 
@@ -368,7 +374,8 @@ class ArteCollectionItem(ArteItem):
 
         return {
             'label': self.format_title_and_subtitle(),
-            'path': self.plugin.url_for('display_collection', kind=kind, collection_id=program_id),
+            'path': self.plugin.url_for(
+                'display', program_type=DisplayType.COL.value, kind=kind, program_id=program_id),
             'thumbnail': item.get('imageUrl'),
             'info': {
                 'title': item.get('title'),
