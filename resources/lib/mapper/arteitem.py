@@ -67,6 +67,7 @@ class ArteVideoItem(ArteItem):
                 'duration': self._get_duration(),
                 'plot': item.get('shortDescription') or item.get('fullDescription'),
                 'plotoutline': item.get('teaserText'),
+                'mpaa': self._get_mpaa_age_rating(),
                 'aired': self._get_air_date()
             },
             'properties': {
@@ -101,6 +102,19 @@ class ArteVideoItem(ArteItem):
             if isinstance(duration.get('seconds', None), int):
                 return duration.get('seconds')
         return None
+
+    def _get_mpaa_age_rating(self):
+        """
+        Return mpaa mapped from age rating
+
+        G – General Audiences
+        PG – Parental Guidance Suggested
+        PG-13 – Parents Strongly Cautioned
+        R – Restricted
+        NC-17 – Adults Only
+        """
+        # 'Unknown' instead of None or '' to avoid TypeError with addon routes
+        return 'Unknown'
 
     def _get_air_date(self):
         """
@@ -169,7 +183,9 @@ class ArteTvVideoItem(ArteVideoItem):
         if self.is_playlist():
             if kind in self.PREFERED_KINDS:
                 # content_type = Content.PLAYLIST
-                path = self.plugin.url_for('play_collection', kind=kind, collection_id=program_id)
+                path = self.plugin.url_for(
+                    'play_collection', kind=kind, collection_id=program_id,
+                    mpaa=self._get_mpaa_age_rating())
                 is_playable = True
                 additional_context_menu = [(
                     self.plugin.addon.getLocalizedString(30011),
@@ -182,7 +198,9 @@ class ArteTvVideoItem(ArteVideoItem):
                 is_playable = False
         else:
             # content_type = Content.VIDEO
-            path = self.plugin.url_for('play', kind=kind, program_id=program_id)
+            path = self.plugin.url_for(
+                'play', kind=kind, program_id=program_id,
+                mpaa=self._get_mpaa_age_rating())
             is_playable = True
 
         xbmc_item = self.build_item(path, is_playable)
@@ -208,7 +226,6 @@ class ArteTvVideoItem(ArteVideoItem):
                     'playcount': '1' if progress >= 0.95 else '0',
                 },
                 'properties': {
-                    'fanart_image': self._get_image_url('1920x1080', False),
                     # ResumeTime and TotalTime deprecated.
                     # Use InfoTagVideo.setResumePoint() instead.
                     'ResumeTime': str(self._get_time_offset()),
@@ -219,7 +236,24 @@ class ArteTvVideoItem(ArteVideoItem):
             basic_item['info'] = {**basic_item['info'], **artetv_item['info']}
             basic_item['properties'] = {**basic_item['properties'], **artetv_item['properties']}
 
+        basic_item['properties']['fanart_image'] = self._get_image_url('1920x1080', False)
         return basic_item
+
+    def _get_mpaa_age_rating(self):
+        mpaa = 'Unknown'
+        age_rating = self.json_dict.get('ageRating', None)
+        if isinstance(age_rating, int):
+            if age_rating == 0:
+                mpaa = 'G'
+            elif 0 < age_rating < 12:
+                mpaa = 'PG'
+            elif 12 <= age_rating < 16:
+                mpaa = 'PG-13'
+            elif 16 <= age_rating < 18:
+                mpaa = 'R'
+            elif 18 <= age_rating:
+                mpaa = 'NC-17'
+        return mpaa
 
     def _get_air_date(self):
         airdate = self.json_dict.get('beginsAt')

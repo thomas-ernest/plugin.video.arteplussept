@@ -53,7 +53,8 @@ class ArteLiveItem(ArteTvVideoItem):
 
         return {
             'label': self.format_title_and_subtitle(),
-            'path': self.plugin.url_for('play_live', stream_url=stream_url),
+            'path': self.plugin.url_for(
+                'play_live', stream_url=stream_url, mpaa=self._get_mpaa_age_restriction()),
             # playing the stream from program id makes the live starts from the beginning
             # while it starts the video like the live tv, with the above
             #  'path': plugin.url_for('play', kind='SHOW', program_id=programId.replace('_fr', '')),
@@ -64,11 +65,27 @@ class ArteLiveItem(ArteTvVideoItem):
                 'title': meta.get('title'),
                 'duration': duration,
                 'plot': meta.get('description'),
-                # 'director': item.get('director'),
-                # 'aired': airdate
                 'playcount': '0',
+                'mpaa': self._get_mpaa_age_restriction(),
             },
             'properties': {
                 'fanart_image': fanart_url,
             }
         }
+
+    def _get_mpaa_age_restriction(self):
+        mpaa = 'Unknown'
+        item = self.json_dict
+        age_restriction = item.get('attributes').get('restriction').get('ageRestriction', None)
+        if isinstance(age_restriction, int):
+            if age_restriction == 0:
+                mpaa = 'G'
+            elif 0 < age_restriction < 12:
+                mpaa = 'PG'
+            elif 12 <= age_restriction < 16:
+                mpaa = 'PG-13'
+            elif 16 <= age_restriction < 18:
+                mpaa = 'R'
+            elif 18 <= age_restriction:
+                mpaa = 'NC-17'
+        return mpaa
