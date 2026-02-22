@@ -89,7 +89,8 @@ def map_video_as_playlist_item(plugin, item):
         kind = kind.get('code')
 
     path = plugin.url_for(
-        'play_siblings', kind=kind, program_id=program_id, audio_slot='1', from_playlist='1')
+        'play_siblings', kind=kind, program_id=program_id,
+        mpaa="Unknown", audio_slot='1', from_playlist='1')
     result = ArteVideoItem(plugin, item).build_item(path, True)
     return result
 
@@ -105,7 +106,7 @@ def map_video_as_item(plugin, item):
     """Create a playable video menu item from a json returned by Arte HBBTV API"""
     program_id = item.get('programId')
     kind = item.get('kind')
-    path = plugin.url_for('play', kind=kind, program_id=program_id)
+    path = plugin.url_for('play', kind=kind, program_id=program_id, mpaa="Unknown")
     return ArteHbbTvVideoItem(plugin, item).build_item(path, True)
 
 
@@ -135,7 +136,7 @@ def map_streams(plugin, item, streams, quality):
         video_item['label'] = audio_label
         video_item['is_playable'] = True
         video_item['path'] = plugin.url_for(
-            'play_specific', kind=kind, program_id=program_id, audio_slot=str(audio_slot))
+            'play_specific', kind=kind, program_id=program_id, mpaa="", audio_slot=str(audio_slot))
 
         return video_item
 
