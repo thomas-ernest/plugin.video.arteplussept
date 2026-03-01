@@ -10,6 +10,7 @@ import dateutil.parser
 from xbmcswift2 import xbmc
 # pylint: disable=import-error
 from xbmcswift2 import actions
+from resources.lib import utils
 
 
 # pylint: disable=too-few-public-methods
@@ -240,20 +241,7 @@ class ArteTvVideoItem(ArteVideoItem):
         return basic_item
 
     def _get_mpaa_age_rating(self):
-        mpaa = 'Unknown'
-        age_rating = self.json_dict.get('ageRating', None)
-        if isinstance(age_rating, int):
-            if age_rating == 0:
-                mpaa = 'G'
-            elif 0 < age_rating < 12:
-                mpaa = 'PG'
-            elif 12 <= age_rating < 16:
-                mpaa = 'PG-13'
-            elif 16 <= age_rating < 18:
-                mpaa = 'R'
-            elif 18 <= age_rating:
-                mpaa = 'NC-17'
-        return mpaa
+        return utils.mpaa_from_age(self.json_dict.get('ageRating', None))
 
     def _get_air_date(self):
         airdate = self.json_dict.get('beginsAt')
