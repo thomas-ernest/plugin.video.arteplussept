@@ -7,6 +7,7 @@ import html
 # the goal is to break/limit this dependency as much as possible
 from resources.lib.mapper import mapper
 from resources.lib.mapper.arteitem import ArteTvVideoItem
+from resources.lib import utils
 
 
 class ArteLiveItem(ArteTvVideoItem):
@@ -74,18 +75,6 @@ class ArteLiveItem(ArteTvVideoItem):
         }
 
     def _get_mpaa_age_restriction(self):
-        mpaa = 'Unknown'
         item = self.json_dict
         age_restriction = item.get('attributes').get('restriction').get('ageRestriction', None)
-        if isinstance(age_restriction, int):
-            if age_restriction == 0:
-                mpaa = 'G'
-            elif 0 < age_restriction < 12:
-                mpaa = 'PG'
-            elif 12 <= age_restriction < 16:
-                mpaa = 'PG-13'
-            elif 16 <= age_restriction < 18:
-                mpaa = 'R'
-            elif 18 <= age_restriction:
-                mpaa = 'NC-17'
-        return mpaa
+        return utils.mpaa_from_age(age_restriction)

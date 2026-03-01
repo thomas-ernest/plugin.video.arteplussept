@@ -136,7 +136,8 @@ def map_streams(plugin, item, streams, quality):
         video_item['label'] = audio_label
         video_item['is_playable'] = True
         video_item['path'] = plugin.url_for(
-            'play_specific', kind=kind, program_id=program_id, mpaa="", audio_slot=str(audio_slot))
+            'play_specific', kind=kind, program_id=program_id,
+            mpaa='Unknown', audio_slot=str(audio_slot))
 
         return video_item
 

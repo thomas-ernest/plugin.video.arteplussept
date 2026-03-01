@@ -34,6 +34,7 @@ from resources.lib.mapper.artesearch import ArteSearch
 from resources.lib.mapper.artezone import ArteZone
 from resources.lib.player import Player
 from resources.lib.settings import Settings
+from resources.lib import utils
 
 # global declarations
 # plugin stuff
@@ -84,9 +85,7 @@ def play_collection(kind, collection_id, mpaa):
     # try to seek parent collection, when out of the context of playlist creation
     # Start playing with the first playlist item
     result = plugin.set_resolved_url(plugin.add_to_playlist(playlist['collection'])[0])
-    if mpaa and (mpaa in ['PG-13', 'R', 'NC-17']):
-        msg = plugin.addon.getLocalizedString(30055).format(label=mpaa)
-        plugin.notify(msg=msg, image='warning')
+    utils.warn_if_age_restricted(plugin, mpaa)
     synch_during_playback(synched_player)
     del synched_player
     return result
@@ -160,9 +159,7 @@ def streams(program_id):
 @plugin.route('/play_live/<stream_url>/<mpaa>', name='play_live')
 def play_live(stream_url, mpaa):
     """Play live content."""
-    if mpaa and (mpaa in ['PG-13', 'R', 'NC-17']):
-        msg = plugin.addon.getLocalizedString(30055).format(label=mpaa)
-        plugin.notify(msg=msg, image='warning')
+    utils.warn_if_age_restricted(plugin, mpaa)
     return plugin.set_resolved_url({'path': stream_url})
 
 # Cannot read video new arte tv program API. Blocked by FFMPEG issue #10149
@@ -198,9 +195,7 @@ def play(kind, program_id, mpaa, audio_slot='1', from_playlist='0'):
         played_item = view.build_stream_url(plugin, kind, program_id, int(audio_slot), settings)
     result = plugin.set_resolved_url(played_item)
 
-    if mpaa and (mpaa in ['PG-13', 'R', 'NC-17']):
-        msg = plugin.addon.getLocalizedString(30055).format(label=mpaa)
-        plugin.notify(msg=msg, image='warning')
+    utils.warn_if_age_restricted(plugin, mpaa)
 
     synch_during_playback(synched_player)
     del synched_player
