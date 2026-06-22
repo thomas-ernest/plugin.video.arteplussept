@@ -28,11 +28,17 @@ def build_home_page(plugin, settings, cached_categories):
                  f"lang:{settings.language} quality:{settings.quality} " +
                  f"because \"{str(error)}\"")
 
-    arte_home = api.page_content(settings.language)
-    for zone in arte_home.get('zones'):
-        menu_item = mapper.map_zone_to_item(plugin, settings, zone, cached_categories)
-        if menu_item:
-            addon_menu.append(menu_item)
+    try:
+        arte_home = api.page_content(settings.language)
+        for zone in arte_home.get('zones'):
+            menu_item = mapper.map_zone_to_item(plugin, settings, zone, cached_categories)
+            if menu_item:
+                addon_menu.append(menu_item)
+    except Exception as error:
+        xbmc.log("Unable to build home items with " +
+                 f"lang:{settings.language} quality:{settings.quality} " +
+                 f"because \"{str(error)}\"")
+
     return addon_menu
 
 
