@@ -284,7 +284,8 @@ def init_search(lang, query):
     url = _ARTETV_URL + ARTETV_ENDPOINTS['page'].format(
         lang=lang, category='SEARCH', client='tv')
     params = {'page': '1', 'query': query}
-    return _load_json_full_url('artetv_initsearch', url, ARTETV_HEADERS, params).get('zones', [None])[0]
+    return _load_json_full_url(
+        'artetv_initsearch', url, ARTETV_HEADERS, params).get('zones', [None])[0]
 
 
 def get_search_page(lang, zone_id, page_idx, query):

@@ -22,7 +22,6 @@ def build_home_page(plugin, settings, cached_categories):
             ArteLiveItem(plugin, api.player_video(settings.language, 'LIVE'))
             .build_item_live(settings.quality, '1'))
     # pylint: disable=broad-exception-caught
-    # Could be improve. possible exceptions are limited to auth. errors
     except Exception as error:
         xbmc.log("Unable to build live stream item with " +
                  f"lang:{settings.language} quality:{settings.quality} " +
@@ -34,6 +33,7 @@ def build_home_page(plugin, settings, cached_categories):
             menu_item = mapper.map_zone_to_item(plugin, settings, zone, cached_categories)
             if menu_item:
                 addon_menu.append(menu_item)
+    # pylint: disable=broad-exception-caught
     except Exception as error:
         xbmc.log("Unable to build home items with " +
                  f"lang:{settings.language} quality:{settings.quality} " +
