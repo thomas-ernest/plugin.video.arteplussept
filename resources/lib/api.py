@@ -53,12 +53,9 @@ ARTETV_ENDPOINTS = {
     'purge_last_viewed': '/sso/v3/lastvieweds/purge',
     # program_id can be 103520-000-A or LIVE
     'player': '/player/v2/config/{lang}/{program_id}',
-    # rproxy
     'program': '/emac/v4/{lang}/web/programs/{program_id}',
-    # rproxy
     # category=HOME, CIN, SER, SEARCH client=app, tv, web, orange, free
     'page': '/emac/v4/{lang}/{client}/pages/{category}/',
-    # rproxy
     # zone_id=167d478a-b668-42a3-b88a-f01a436c7394...
     # keep path and url in a snigle place for readibility
     # page_id=SEARCH, HOME...
@@ -67,7 +64,7 @@ ARTETV_ENDPOINTS = {
         'abv=A&authorizedCountry={lang}&page={page}&pageId={page_id}&' +
         'query={query}&zoneIndexInPage=0',
     # not yet impl.
-    # rproxy date=2023-01-17
+    # date=2023-01-17
     # 'guide_tv': '/emac/v3/{lang}/{client}/pages/TV_GUIDE/?day={DATE}',
     # auth api
     'custom_token': '/setCustomToken',
@@ -287,7 +284,8 @@ def init_search(lang, query):
     url = _ARTETV_URL + ARTETV_ENDPOINTS['page'].format(
         lang=lang, category='SEARCH', client='tv')
     params = {'page': '1', 'query': query}
-    return _load_json_full_url('artetv_initsearch', url, ARTETV_HEADERS, params).get('zones', [None])[0]
+    return _load_json_full_url(
+        'artetv_initsearch', url, ARTETV_HEADERS, params).get('zones', [None])[0]
 
 
 def get_search_page(lang, zone_id, page_idx, query):
