@@ -1,5 +1,11 @@
 Changelog also available in file ./addon.xml xpath /addon/extension/news following Kodi guidelines https://kodi.wiki/view/Add-on_structure#changelog.txt
 
+v1.4.5 (2026-07-01)
+- Fix home menu display related to Arte r-proxy changes.
+- Remove auth token remote persistence.
+- Add age restriction MPAA info to videos.
+- Warn during playback if MPAA is 'PG-13', 'R' or 'NC-17'.
+
 v1.4.1 (2023-10-10)
 - Fix playing videos with siblings.
 
