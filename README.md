@@ -101,7 +101,7 @@ If you are having issues with the add-on, you can open a issue and join your log
 
 ## Releasing
 
-### Releasing part on contributo's host
+### Releasing part on contributor's host
 
 Steps to be followed by a contributor to create a release.
 
