@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+REMOTE_ID=origin
+
 # ---------------------------------------------------------
 # Method: ask_next_release_version
 # Get current version from addon.xml and ask for next release version
@@ -104,8 +106,26 @@ compute_current_date() {
 echo "=== Create a new release for Kodi extension Arte+7 ==="
 
 # ---------------------------------------------------------
-# Ensure we are on master branch
+# Parse arguments (only --no-push supported)
 # ---------------------------------------------------------
+NO_PUSH=false
+if [ "$1" == "--no-push" ]; then
+    NO_PUSH=true
+    echo "[NO-PUSH MODE] Commit and tag created locally but NOT pushed"
+fi
+
+# ---------------------------------------------------------
+# Pre-requisites: Ensure we are on master branch aligned
+# with the remote $REMOTE_ID/master branch.
+# ---------------------------------------------------------
+
+# Ensure we are inside a git repository
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "ERROR: Need to be inside a git repository."
+    exit 1
+fi
+
+# Ensure we are on the master branch
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [ "$CURRENT_BRANCH" != "master" ]; then
     echo "ERROR: Releases must be created from the master branch."
@@ -113,13 +133,16 @@ if [ "$CURRENT_BRANCH" != "master" ]; then
     exit 1
 fi
 
-# ---------------------------------------------------------
-# Parse arguments (only --no-push supported)
-# ---------------------------------------------------------
-NO_PUSH=false
-if [ "$1" == "--no-push" ]; then
-    NO_PUSH=true
-    echo "[NO-PUSH MODE] Commit and tag created locally but NOT pushed"
+# Fetch latest remote state
+git fetch $REMOTE_ID master
+
+# Compare local and remote master commit hashes
+LOCAL_MASTER_COMMIT=$(git rev-parse master)
+REMOTE_MASTER_COMMIT=$(git rev-parse $REMOTE_ID/master)
+if [[ "$LOCAL_MASTER_COMMIT" != "$REMOTE_MASTER_COMMIT" ]]; then
+    echo "ERROR: Local master and $REMOTE_ID/master need to be the same"
+    echo "Local: $LOCAL_MASTER_COMMIT and remote: $REMOTE_MASTER_COMMIT"
+    exit 1
 fi
 
 # ---------------------------------------------------------
@@ -166,8 +189,8 @@ git tag -a "v$VERSION" -m "$NOTES"
 if [ "$NO_PUSH" = true ]; then
     echo "=== [NO-PUSH MODE] Commit and tag created locally but NOT pushed ==="
 else
-    echo "=== Pushing commit and tag to origin ==="
-    git push origin --tags
+    echo "=== Pushing commit and tag to $REMOTE_ID ==="
+    git push $REMOTE_ID --tags
 fi
 
 echo "=== Release v$VERSION created successfully ==="

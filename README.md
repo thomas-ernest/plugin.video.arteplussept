@@ -104,8 +104,10 @@ If you are having issues with the add-on, you can open a issue and join your log
 ### Releasing part on contributor's host
 
 Steps to be followed by a contributor to create a release.
+Preferablly you can use scripts/create-release.sh in a BASH to do the same.
+It has a parameter --no-push, if you want to check the results before applying changes remotely.
 
-- Releases are created in master branch. Make sure HEAD in master reflects the content of the next release.
+- Releases are in master branch. Make sure HEAD in master reflects the content of the next release.
 - Set the version $MAJOR.$MINOR.$BUGFIX (without v) in addon.xml /addon/@version 
 - Describe the changes of the news version in:
     - CHANGELOG.md. Ignore changelog.txt remaining here for legacy purpose.
