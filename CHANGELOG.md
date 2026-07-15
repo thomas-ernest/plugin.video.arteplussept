@@ -1,3 +1,9 @@
+v1.5.0 (2026-7-15)
+
+- New: Play from the strat or play live content
+- NFR: Make create-release.sh more robust
+- NFR: First unit tests (for arte live stream)
+
 v1.4.6 (2026-7-15)
 
 Non functional improvements and bugfix adding to arte favorites
