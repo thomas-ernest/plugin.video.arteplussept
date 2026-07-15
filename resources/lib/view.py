@@ -133,7 +133,7 @@ def build_collection_playlist(plugin, settings, kind, collection_id):
         kind, collection_id))
 
 
-def build_stream_url(plugin, kind, program_id, audio_slot, settings):
+def build_stream_url(plugin, settings, kind, program_id, audio_slot):
     """
     Return URL to stream content.
     If the content is not available, it tries to return a related trailer or teaser.

@@ -1,0 +1,20 @@
+{
+    "label": "[B][COLOR ffffa500]LIVE[/COLOR] - Le tour du monde en quatre-vingts jours (1/3)[/B]",
+    "thumbnail": "https://api-cdn.arte.tv/img/v2/image/bqKT5Zt8nQTct2zFQaepKn/940x530",
+    "is_playable": true,
+    "info_type": "video",
+    "info": {
+        "title": "Le tour du monde en quatre-vingts jours (1/3)",
+        "duration": 5408,
+        "plot": "Le riche Britannique Phileas Fogg parie avec des membres de son club qu’il parviendra à faire le tour du globe en un temps record : quatre-vingts jours. Autour de Pierce Brosnan et d’une pléiade de guest-stars, une adaptation pittoresque et mouvementée du roman de Jules Verne.",
+        "playcount": "0",
+        "mpaa": "Unknown"
+    },
+    "properties": {
+        "fanart_image": "https://api-cdn.arte.tv/img/v2/image/bqKT5Zt8nQTct2zFQaepKn/940x530"
+    },
+    "path": "plugin://mocked_route",
+    "context_menu": [
+        ["My mocked localized string", "RunPlugin(plugin://mocked_route)"]
+    ]
+}

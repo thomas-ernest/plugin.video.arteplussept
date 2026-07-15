@@ -1,0 +1,3 @@
+json
+pytest
+xbmcswift2

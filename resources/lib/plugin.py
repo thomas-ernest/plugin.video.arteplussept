@@ -13,6 +13,7 @@ from resources.lib.mapper.artezone import ArteZone
 from resources.lib.player import Player
 from resources.lib.settings import Settings
 from resources.lib import utils
+from resources.lib.utils import PlayFrom
 
 # global declarations
 # plugin stuff
@@ -145,9 +146,9 @@ def synch_during_playback(synched_player):
 
 
 @plugin.route('/play/<kind>/<program_id>/<mpaa>', name='play')
-@plugin.route('/play/<kind>/<program_id>/<mpaa>/<audio_slot>', name='play_specific')
-@plugin.route('/play/<kind>/<program_id>/<mpaa>/<audio_slot>/<from_playlist>', name='play_siblings')
-def play(kind, program_id, mpaa, audio_slot='1', from_playlist='0'):
+@plugin.route('/play/<kind>/<program_id>/<mpaa>/<play_from>', name='play_from')
+@plugin.route('/play/<kind>/<program_id>/<mpaa>/<play_from>/<audio_slot>', name='play_specific')
+def play(kind, program_id, mpaa, audio_slot=PlayFrom.ITM, play_from='0'):
     """Play content identified with program_id.
     :param str kind: an enum in TODO (e.g. TRAILER, COLLECTION, LINK, CLIP, ...)
     :param str audio_slot: a numeric to identify the audio stream to use e.g. 1 2
@@ -155,7 +156,7 @@ def play(kind, program_id, mpaa, audio_slot='1', from_playlist='0'):
     synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
     # try to seek parent collection, when out of the context of playlist creation
     sibling_playlist = None
-    if from_playlist == '0':
+    if play_from == PlayFrom.LST.value:
         sibling_playlist = view.build_sibling_playlist(plugin, settings, program_id)
     played_item = None
     if sibling_playlist is not None and len(sibling_playlist['collection']) > 1:
@@ -165,9 +166,11 @@ def play(kind, program_id, mpaa, audio_slot='1', from_playlist='0'):
         played_item = plugin.add_to_playlist(sibling_playlist['collection'])[0]
         result = plugin.set_resolved_url()
     else:
-        played_item = view.build_stream_url(plugin, kind, program_id, int(audio_slot), settings)
-    result = plugin.set_resolved_url(played_item)
-
+        played_item = view.build_stream_url(plugin, settings, kind, program_id, int(audio_slot))
+        if play_from == PlayFrom.CTX.value:
+            result = plugin.play_video(played_item)
+        else:
+            result = plugin.set_resolved_url(played_item)
     utils.warn_if_age_restricted(plugin, mpaa)
 
     synch_during_playback(synched_player)
