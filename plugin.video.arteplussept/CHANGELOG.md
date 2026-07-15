@@ -1,3 +1,8 @@
+v1.5.1 (2026-7-15)
+
+
+Isolate plugin source from scripts and tests
+
 v1.5.0 (2026-7-15)
 
 - New: Play from the strat or play live content

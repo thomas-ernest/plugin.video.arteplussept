@@ -14,7 +14,7 @@ REMOTE_ID=origin
 # ---------------------------------------------------------
 ask_next_release_version() {
     local CURRENT_VERSION
-    CURRENT_VERSION=$(grep -oP '<addon\b[^>]*\bversion="\K[0-9]+\.[0-9]+\.[0-9]+' addon.xml)
+    CURRENT_VERSION=$(grep -oP '<addon\b[^>]*\bversion="\K[0-9]+\.[0-9]+\.[0-9]+' plugin.video.arteplussept/addon.xml)
 
     local MAJOR MINOR BUGFIX
     MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)

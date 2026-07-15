@@ -148,7 +148,7 @@ def synch_during_playback(synched_player):
 @plugin.route('/play/<kind>/<program_id>/<mpaa>', name='play')
 @plugin.route('/play/<kind>/<program_id>/<mpaa>/<play_from>', name='play_from')
 @plugin.route('/play/<kind>/<program_id>/<mpaa>/<play_from>/<audio_slot>', name='play_specific')
-def play(kind, program_id, mpaa, play_from=PlayFrom.ITM, audio_slot='0'):
+def play(kind, program_id, mpaa, play_from=PlayFrom.ITM, audio_slot='1'):
     """Play content identified with program_id.
     :param str kind: an enum in TODO (e.g. TRAILER, COLLECTION, LINK, CLIP, ...)
     :param str audio_slot: a numeric to identify the audio stream to use e.g. 1 2

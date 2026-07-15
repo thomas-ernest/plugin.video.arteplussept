@@ -91,7 +91,7 @@ def map_video_as_playlist_item(plugin, item):
 
     path = plugin.url_for(
         'play_from', kind=kind, program_id=program_id,
-        mpaa="Unknown", from_playlist=PlayFrom.LST.value)
+        mpaa="Unknown", play_from=PlayFrom.LST.value)
     result = ArteVideoItem(plugin, item).build_item(path, True)
     return result
 
