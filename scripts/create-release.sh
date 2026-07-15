@@ -3,6 +3,9 @@ set -euo pipefail
 
 REMOTE_ID=origin
 
+# compare changes between a release e.g. v1.4.5 and master
+# https://github.com/thomas-ernest/plugin.video.arteplussept/compare/v1.4.5...master
+
 # ---------------------------------------------------------
 # Method: ask_next_release_version
 # Get current version from addon.xml and ask for next release version
@@ -109,7 +112,7 @@ echo "=== Create a new release for Kodi extension Arte+7 ==="
 # Parse arguments (only --no-push supported)
 # ---------------------------------------------------------
 NO_PUSH=false
-if [ "$1" == "--no-push" ]; then
+if [ "${1:-}" == "--no-push" ]; then
     NO_PUSH=true
     echo "[NO-PUSH MODE] Commit and tag created locally but NOT pushed"
 fi
@@ -159,7 +162,7 @@ ask_next_release_version
 ask_next_release_notes
 
 echo "=== Updating addon.xml version attribute and <news> field ==="
-sed -i "s/version=\"[^\"]*\"/version=\"$VERSION\"/" addon.xml
+sed -i -E "s/(<addon[^>]*version=\")[^\"]*(\"[^>]*>)/\1$VERSION\2/" addon.xml
 ADDON_NEWS="<news>${VERSION} (${DATE})
 ${NOTES}</news>"
 awk -v news="$ADDON_NEWS" '
@@ -172,7 +175,7 @@ mv addon.xml.tmp addon.xml
 
 echo "=== Updating CHANGELOG.md ==="
 {
-    echo "## v$VERSION ($DATE)"
+    echo "v$VERSION ($DATE)"
     echo ""
     echo "$NOTES"
     echo ""
@@ -185,7 +188,7 @@ git add addon.xml CHANGELOG.md
 git commit -m "Bump version to $VERSION"
 
 echo "=== Creating annotated tag v$VERSION ==="
-git tag -a "v$VERSION" -m "$NOTES"
+git tag --force --annotate "v$VERSION" -m "$NOTES"
 if [ "$NO_PUSH" = true ]; then
     echo "=== [NO-PUSH MODE] Commit and tag created locally but NOT pushed ==="
 else
