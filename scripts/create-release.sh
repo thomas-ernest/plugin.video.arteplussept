@@ -162,7 +162,7 @@ ask_next_release_version
 ask_next_release_notes
 
 echo "=== Updating addon.xml version attribute and <news> field ==="
-sed -i -E "s/(<addon[^>]*version=\")[^\"]*(\"[^>]*>)/\1$VERSION\2/" addon.xml
+sed -i -E "s/(<addon[^>]*version=\")[^\"]*(\"[^>]*>)/\1$VERSION\2/" plugin.video.arteplussept/addon.xml
 ADDON_NEWS="<news>${VERSION} (${DATE})
 ${NOTES}</news>"
 awk -v news="$ADDON_NEWS" '
@@ -170,8 +170,8 @@ awk -v news="$ADDON_NEWS" '
     /<news>/ { print news; innews=1; next }
     /<\/news>/ { innews=0; next }
     !innews { print }
-' addon.xml > addon.xml.tmp
-mv addon.xml.tmp addon.xml
+' plugin.video.arteplussept/addon.xml > plugin.video.arteplussept/addon.xml.tmp
+mv plugin.video.arteplussept/addon.xml.tmp plugin.video.arteplussept/addon.xml
 
 echo "=== Updating CHANGELOG.md ==="
 {
@@ -179,18 +179,19 @@ echo "=== Updating CHANGELOG.md ==="
     echo ""
     echo "$NOTES"
     echo ""
-    cat CHANGELOG.md
-} > CHANGELOG.md.tmp
-mv CHANGELOG.md.tmp CHANGELOG.md
+    cat plugin.video.arteplussept/CHANGELOG.md
+} > plugin.video.arteplussept/CHANGELOG.md.tmp
+mv plugin.video.arteplussept/CHANGELOG.md.tmp plugin.video.arteplussept/CHANGELOG.md
 
 echo "=== Creating commit ==="
-git add addon.xml CHANGELOG.md
+git add plugin.video.arteplussept/addon.xml plugin.video.arteplussept/CHANGELOG.md
 git commit -m "Bump version to $VERSION"
 
 echo "=== Creating annotated tag v$VERSION ==="
 git tag --force --annotate "v$VERSION" -m "$NOTES"
 if [ "$NO_PUSH" = true ]; then
     echo "=== [NO-PUSH MODE] Commit and tag created locally but NOT pushed ==="
+    echo "To push manually, run: git push $REMOTE_ID --tags"
 else
     echo "=== Pushing commit and tag to $REMOTE_ID ==="
     git push $REMOTE_ID --tags
