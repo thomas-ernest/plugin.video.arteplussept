@@ -132,3 +132,22 @@ Steps run automatically by CI, with troubleshooting guide.
     - In https://github.com/settings/tokens/ generate a corsed-grained token KODI_SUBMITTER_TOKEN_CLASSIC and copy its value
     - set the token value in action secret KODI_SUBMITTER_TOKEN https://github.com/thomas-ernest/plugin.video.arteplussept/settings/secrets/actions
     - Re-run the failing job "Kodi Addon-Submitter"
+
+## Testing
+
+1.  **Install dependencies**:
+    ```bash
+    pip install -r requirements-test.txt
+    ```
+2.  **Run all tests**:
+    In plugin root folder
+    ```bash
+    PYTHONPATH="$PWD;$HOME/AppData/Roaming/Kodi/addons/script.module.xbmcswift2/lib" python -m pytest -vv tests/test_lib_mapper_arteliveitem.py
+    ```
+    
+various docs and examples
+# https://xbmcswift2.readthedocs.io/en/latest/commandline.html
+# https://github.com/eral/kodi.plugin.video.u-next-animefree-eral-test/blob/master/tests/script_addon_router_for_kodi_test.py
+# https://github.com/firsttris/plugin.video.sendtokodi/tree/master/tests
+# https://github.com/sbroenne/plugin.video.nhkworldtv/tree/main/plugin.video.nhkworldtv/tests
+# https://github.com/audiosistem/Bee-Queen/blob/main/matrix/plugin.video.jacktook/GEMINI.md?plain=1

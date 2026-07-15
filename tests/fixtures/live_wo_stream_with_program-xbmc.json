@@ -1,0 +1,17 @@
+{
+    "label": "[B][COLOR ffffa500]LIVE[/COLOR] - Leif Ove Andsnes interprète Mozart[/B]",
+    "thumbnail": "https://api-cdn.arte.tv/img/v2/image/BPyJtp2CxnNXmoD54Hnhq4/940x530",
+    "is_playable": true,
+    "info_type": "video",
+    "info": {
+        "title": "Leif Ove Andsnes interprète Mozart",
+        "duration": 2624,
+        "plot": "Le pianiste Leif Ove Andsnes et le Mahler Chamber Orchestra présentent l’épilogue de leur projet \"Mozart Momentum\" dans la ville natale du compositeur autrichien. \u00a0",
+        "playcount": "0",
+        "mpaa": "Unknown"
+    },
+    "properties": {
+        "fanart_image": "https://api-cdn.arte.tv/img/v2/image/BPyJtp2CxnNXmoD54Hnhq4/940x530"
+    },
+    "path": "plugin://mocked_route"
+}
