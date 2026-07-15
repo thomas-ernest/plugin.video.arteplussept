@@ -48,8 +48,9 @@ Kodi is installed on a different path according to the operating system it is in
 ### 2. Dowload the addon
 
 In Kodi addons folder
-- clone this repository or one of if its forks (preferred)
+- clone this repository or one of if its forks (preferred) and move source to plugin folder
   - `git clone https://github.com/thomas-ernest/plugin.video.arteplussept.git`
+  - `mv plugin.video.arteplussept/plugin.video.arteplussept plugin.video.arteplussept`
 - or download the plugin :
   - [any release](https://github.com/thomas-ernest/plugin.video.arteplussept/releases)
   - [latest commit on master](https://github.com/thomas-ernest/plugin.video.arteplussept/archive/refs/heads/master.zip)
@@ -57,7 +58,8 @@ In Kodi addons folder
 ### 3. Install the addon
 
 - If you downloaded a zip, extract the content of the zip in the `addons` folder.
-- Make sure that the addon is in folder `plugin.video.arteplussept` (and not `plugin.video.arteplussept-master` if you downloaded the latest commit of master for instance).
+- Make sure that the addon is in folder `plugin.video.arteplussept` (and not `plugin.video.arteplussept-master` if you downloaded the latest commit of master for instance or in 
+`plugin.video.arteplussept/plugin.video.arteplussept` if you missed the mv operation).
 
 For instance for Linux:
 ```
@@ -142,7 +144,7 @@ Steps run automatically by CI, with troubleshooting guide.
 2.  **Run all tests**:
     In plugin root folder
     ```bash
-    PYTHONPATH="$PWD;$HOME/AppData/Roaming/Kodi/addons/script.module.xbmcswift2/lib" python -m pytest -vv tests/test_lib_mapper_arteliveitem.py
+    PYTHONPATH="$PWD/plugin.video.arteplussept;$HOME/AppData/Roaming/Kodi/addons/script.module.xbmcswift2/lib" python -m pytest -vv tests/test_lib_mapper_arteliveitem.py
     ```
     
 various docs and examples

@@ -8,6 +8,7 @@ __pycache__/
 tests/
 test_*.py
 pytest.ini
+.pytest_cache/
 
 # Development files
 .git/
@@ -18,6 +19,3 @@ pytest.ini
 
 # Build files
 scripts/
-
-# Pytest
-.pytest_cache/

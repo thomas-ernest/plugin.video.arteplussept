@@ -21,7 +21,7 @@ jobs:
         kodi-version: matrix
         addon-id: plugin.video.arteplussept
         kodi-matrix: false
-        sub-directory: false
+        sub-directory: true
       env:
         GH_USERNAME: ${{ github.actor }}
         # warning KODI_SUBMITTER_TOKEN is valid for 30d
