@@ -47,7 +47,7 @@ class ArteZone(ArteCollection):
         page_id is the type of page e.g. HOME, SEARCH...
         """
         return self._build_menu(
-            api.get_zone_page(self.settings.language, zone_id, page, page_id),
+            api.get_zone_page(self.settings.language, zone_id, page),
             'category_page', zone_id=zone_id, page_id=page_id)
 
     def _get_page_meta(self, json_dict):
