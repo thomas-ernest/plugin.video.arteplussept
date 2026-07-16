@@ -60,8 +60,11 @@ ARTETV_ENDPOINTS = {
     # page_id=SEARCH, HOME...
     'zone':
         '/emac/v4/{lang}/{client}/zones/{zone_id}/content?' +
-        'abv=A&authorizedCountry={lang}&page={page}&pageId={page_id}&' +
+        'abv=A&authorizedCountry={country}&page={page}&pageId={page_id}&' +
         'query={query}&zoneIndexInPage=0',
+    'zonepage':
+        '/emac/v4/{lang}/{client}/zones/{zone_id}/content?' +
+        'authorizedCountry={country}&page={page}',
     # not yet impl.
     # date=2023-01-17
     # 'guide_tv': '/emac/v3/{lang}/{client}/pages/TV_GUIDE/?day={DATE}',
@@ -292,17 +295,18 @@ def get_search_page(lang, zone_id, page_idx, query):
     Navigate in pages of a search identified by zone_id.
     """
     url = _ARTETV_URL + ARTETV_ENDPOINTS['zone'].format(
-        lang=lang, client='tv', zone_id=zone_id, page=page_idx, page_id='SEARCH', query=query)
+        lang=lang, client='tv', zone_id=zone_id, country=lang.upper(), page=page_idx,
+        page_id='SEARCH', query=query)
     return _load_json_full_url('artetv_getsearchpage', url, ARTETV_HEADERS)
 
 
-def get_zone_page(lang, zone_id, page_idx, page_id):
+def get_zone_page(lang, zone_id, page_idx):
     """
     Navigate in pages of a zone identified by zone_id.
     """
-    url = _ARTETV_URL + ARTETV_ENDPOINTS['zone'].format(
-        lang=lang, client='tv', zone_id=zone_id, page=page_idx, page_id=page_id, query='null')
-    return _load_json_full_url('artetv_getsearchpage', url, ARTETV_HEADERS)
+    url = _ARTETV_URL + ARTETV_ENDPOINTS['zonepage'].format(
+        lang=lang, client='tv', zone_id=zone_id, country=lang.upper(), page=page_idx)
+    return _load_json_full_url('artetv_getzonepage', url, ARTETV_HEADERS)
 
 
 def _load_json(request_scope, path, headers=None):
