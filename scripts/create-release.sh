@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REMOTE_ID=origin
+SRC_PTH=plugin.video.arteplussept/
 
 # compare changes between a release e.g. v1.4.5 and master
 # https://github.com/thomas-ernest/plugin.video.arteplussept/compare/v1.4.5...master
@@ -14,7 +15,7 @@ REMOTE_ID=origin
 # ---------------------------------------------------------
 ask_next_release_version() {
     local CURRENT_VERSION
-    CURRENT_VERSION=$(grep -oP '<addon\b[^>]*\bversion="\K[0-9]+\.[0-9]+\.[0-9]+' plugin.video.arteplussept/addon.xml)
+    CURRENT_VERSION=$(grep -oP '<addon\b[^>]*\bversion="\K[0-9]+\.[0-9]+\.[0-9]+' ${SRC_PATH}addon.xml)
 
     local MAJOR MINOR BUGFIX
     MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
@@ -162,7 +163,7 @@ ask_next_release_version
 ask_next_release_notes
 
 echo "=== Updating addon.xml version attribute and <news> field ==="
-sed -i -E "s/(<addon[^>]*version=\")[^\"]*(\"[^>]*>)/\1$VERSION\2/" plugin.video.arteplussept/addon.xml
+sed -i -E "s/(<addon[^>]*version=\")[^\"]*(\"[^>]*>)/\1$VERSION\2/" ${SRC_PATH}addon.xml
 ADDON_NEWS="<news>${VERSION} (${DATE})
 ${NOTES}</news>"
 awk -v news="$ADDON_NEWS" '
@@ -170,8 +171,8 @@ awk -v news="$ADDON_NEWS" '
     /<news>/ { print news; innews=1; next }
     /<\/news>/ { innews=0; next }
     !innews { print }
-' plugin.video.arteplussept/addon.xml > plugin.video.arteplussept/addon.xml.tmp
-mv plugin.video.arteplussept/addon.xml.tmp plugin.video.arteplussept/addon.xml
+' ${SRC_PATH}addon.xml > ${SRC_PATH}addon.xml.tmp
+mv ${SRC_PATH}addon.xml.tmp ${SRC_PATH}addon.xml
 
 echo "=== Updating CHANGELOG.md ==="
 {
@@ -179,12 +180,15 @@ echo "=== Updating CHANGELOG.md ==="
     echo ""
     echo "$NOTES"
     echo ""
-    cat plugin.video.arteplussept/CHANGELOG.md
-} > plugin.video.arteplussept/CHANGELOG.md.tmp
-mv plugin.video.arteplussept/CHANGELOG.md.tmp plugin.video.arteplussept/CHANGELOG.md
+    cat ${SRC_PATH}CHANGELOG.md
+} > ${SRC_PATH}CHANGELOG.md.tmp
+mv ${SRC_PATH}CHANGELOG.md.tmp ${SRC_PATH}CHANGELOG.md
+
+echo "=== Updating version in api.py ==="
+sed -i -E 's|^(_PLUGIN_VERSION[[:space:]]*=[[:space:]]*")[^"]*(")|\1'"$VERSION"'\2|' ${SRC_PATH}resources/lib/api.py
 
 echo "=== Creating commit ==="
-git add plugin.video.arteplussept/addon.xml plugin.video.arteplussept/CHANGELOG.md
+git add ${SRC_PATH}addon.xml ${SRC_PATH}CHANGELOG.md ${SRC_PATH}resources/lib/api.py
 git commit -m "Bump version to $VERSION"
 
 echo "=== Creating annotated tag v$VERSION ==="
