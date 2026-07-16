@@ -90,6 +90,12 @@ _COOKIES = {
     'TC_PRIVACY_CENTER': None
 }
 
+_ARTETV_ID_URL = 'https://id.arte.tv/auth/realms/myarte-prod/protocol/openid-connect'
+DEVICE_AUTH_URL = f"{_ARTETV_ID_URL}/auth/device"
+TOKEN_URL = f"{_ARTETV_ID_URL}/token"
+REVOKE_URL = f"{_ARTETV_ID_URL}/revoke"
+SMART_TV_CLIENT_ID = 'smart-tv'
+
 
 def get_favorites(lang, tkn, page_idx, page_size=50):
     """Retrieve favorites from a personal account."""
@@ -353,23 +359,6 @@ def _add_auth_token(tkn, hdrs):
     return headers
 
 
-def get_and_persist_token_in_arte(plugin, username, password):
-    """Log in user thanks to his/her settings and get a bearer token.
-    Return None if:
-        - any parameter is empty
-        - silenty if both parameters are empty
-        - with a notification if one is not empty
-        - connection to arte tv failed"""
-
-    tokens = authenticate_in_arte(plugin, username, password)
-    # exit if authentication failed
-    if not tokens:
-        return None
-
-    # return persisted or unpersisted token anyway
-    return tokens
-
-
 def authenticate_in_arte(plugin, username='', password='', headers=None):
     """Return None if authentication failed and display an error notification
     Return arte reply with access and refresh tokens if authentication was successfull
@@ -458,3 +447,87 @@ def persist_token_in_arte(plugin, tokens, headers=None):
         return False
 
     return True
+
+
+def device_authorization_request():
+    """
+    Step 1 of ARTE Smart-TV Device Flow:
+    Request device_code + user_code from Keycloak.
+    Returns dict or None.
+    """
+    try:
+        payload = {
+            "client_id": SMART_TV_CLIENT_ID,
+            "scope": "openid"
+        }
+
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+        resp = requests.post(DEVICE_AUTH_URL, data=payload, headers=headers, timeout=10)
+        if resp.status_code != 200:
+            xbmc.log(f"Device authorization failed: HTTP {resp.status_code}", level=xbmc.LOGERROR)
+            return None
+
+        return resp.json()
+
+    # pylint: disable=broad-except
+    except Exception as e:
+        xbmc.log(f"Device authorization exception: {e}", level=xbmc.LOGERROR)
+        return None
+
+
+def device_token_request(device_code):
+    """
+    Step 2 of ARTE Smart-TV Device Flow:
+    Poll token endpoint using device_code.
+    Returns dict containing either:
+    - access_token (success)
+    - error (authorization_pending, slow_down, access_denied, expired_token)
+    """
+    try:
+        payload = {
+            "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+            "device_code": device_code,
+            "client_id": SMART_TV_CLIENT_ID
+        }
+
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+        resp = requests.post(TOKEN_URL, data=payload, headers=headers, timeout=10)
+        return resp.json()
+
+    # pylint: disable=broad-except
+    except Exception as e:
+        xbmc.log(f"Device token polling exception: {e}", level=xbmc.LOGERROR)
+        return {"error": "exception"}
+
+
+def revoke_token(token):
+    """
+    Revoke ARTE OAuth2 token (refresh_token recommended).
+    Returns True on success, False otherwise.
+    """
+    try:
+        payload = {
+            "client_id": SMART_TV_CLIENT_ID,
+            "token": token,
+            "token_type_hint": "refresh_token"
+        }
+
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+        resp = requests.post(REVOKE_URL, data=payload, headers=headers, timeout=10)
+
+        # Keycloak returns 200 even if token was already invalid
+        return resp.status_code == 200
+
+    # pylint: disable=broad-except
+    except Exception as e:
+        xbmc.log(f"Token revocation exception: {e}", level=xbmc.LOGERROR)
+        return False
