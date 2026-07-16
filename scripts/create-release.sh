@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REMOTE_ID=origin
-SRC_PTH=plugin.video.arteplussept/
+SRC_PATH=plugin.video.arteplussept/
 
 # compare changes between a release e.g. v1.4.5 and master
 # https://github.com/thomas-ernest/plugin.video.arteplussept/compare/v1.4.5...master

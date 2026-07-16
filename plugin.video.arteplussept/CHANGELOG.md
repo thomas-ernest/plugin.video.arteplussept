@@ -1,3 +1,7 @@
+v1.5.2 (2026-7-16)
+
+Fix page navigation and keep version in api header user_agent aligned with addon version
+
 v1.5.1 (2026-7-15)
 
 

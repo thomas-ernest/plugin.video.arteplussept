@@ -8,7 +8,7 @@ from resources.lib import hof
 from resources.lib import logger
 
 _PLUGIN_NAME = "Arte +7"
-_PLUGIN_VERSION = "1.5.1"
+_PLUGIN_VERSION = "1.5.2"
 # Arte hbbtv - deprecated API since 2022 prefer Arte TV API
 _HBBTV_URL = 'https://www.arte.tv/hbbtvv2/services/web/index.php'
 _HBBTV_HEADERS = {
