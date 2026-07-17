@@ -204,16 +204,8 @@ def logout(plugin, settings):
     """Delete user token and reset settings state"""
     erase_password_in_old_config(plugin)
 
-    usr = settings.username
-    cached_token = get_cached_token(plugin, usr, silent=True)
+    # Possible improve - revoke token remotely or logout
 
-    # Revoke refresh token if available - clear token remotely
-    if cached_token and "refresh_token" in cached_token:
-        refresh_token = cached_token["refresh_token"]
-        if api.revoke_token(refresh_token):
-            xbmc.log("ARTE token successfully revoked", level=xbmc.LOGINFO)
-        else:
-            xbmc.log("Failed to revoke ARTE token", level=xbmc.LOGWARNING)
     # clear token locally
     set_cached_token(plugin, settings.username, '')
     clear_cached_tokens(plugin)
