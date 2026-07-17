@@ -21,15 +21,15 @@ def login(plugin, settings):
     Unified login entry point.
     User chooses between:
     - Password login
-    - Smart-TV Device login
+    - Smart TV Device login
     """
     erase_password_in_old_config(plugin)
 
     choice = xbmcgui.Dialog().select(
         plugin.addon.getLocalizedString(30057),
         [
-            "Login with Smart‑TV device code",
-            "Login with email & password"
+            plugin.addon.getLocalizedString(30046),
+            plugin.addon.getLocalizedString(30047)
         ]
     )
     if choice == 0:
@@ -40,7 +40,7 @@ def login(plugin, settings):
 
 
 # ---------------------------------------------------------------------------
-# PASSWORD LOGIN (existing logic, untouched)
+# PASSWORD LOGIN
 # ---------------------------------------------------------------------------
 
 def login_with_password(plugin, settings):
@@ -114,23 +114,21 @@ def get_user_password(plugin):
 
 
 # ---------------------------------------------------------------------------
-# SMART-TV DEVICE FLOW LOGIN (new)
+# SMART TV DEVICE FLOW LOGIN
 # ---------------------------------------------------------------------------
 
 def login_with_device_flow(plugin, settings):
     """
-    Smart-TV Device Authorization Flow:
+    Smart TV Device Authorization Flow:
     1. Request device_code + user_code
-    2. Show QR code + user_code to user and steps to authenticate on another device
+    2. Show instructions and code to authenticate on another device
     3. Poll token endpoint until success
     4. Store token
     """
-    xbmc.log("Starting ARTE Smart-TV device login", level=xbmc.LOGINFO)
-
     # Step 1 - request device_code
     device_info = api.device_authorization_request()
     if not device_info:
-        plugin.notify(msg="Device login failed: cannot contact ARTE", image='error')
+        plugin.notify(plugin.addon.getLocalizedString(30020), image='error')
         return False
 
     device_code = device_info["device_code"]
@@ -139,61 +137,33 @@ def login_with_device_flow(plugin, settings):
     # verification_uri_complete = device_info["verification_uri_complete"]
     interval = device_info.get("interval", 5)
 
-    # Step 2 - show QR code + user_code
-    show_device_login_dialog(user_code, verification_uri)
+    # Step 2 - show instructions and code to authenticate on another device
+    show_device_login_dialog(plugin, user_code, verification_uri)
 
     # Step 3 - poll token endpoint
     tokens = poll_device_token(device_code, interval)
     if tokens is None:
-        plugin.notify(msg="Device login failed", image='error')
+        plugin.notify(plugin.addon.getLocalizedString(30020), image='error')
         return False
 
     # Step 4 - store token
     usr = settings.username
     set_cached_token(plugin, usr, tokens)
     update_settings_state(plugin, usr)
-    # TODO set the right notification
     msg = plugin.addon.getLocalizedString(30017).format(user=usr)
     plugin.notify(msg=msg, image='info')
     return True
 
 
-def show_device_login_dialog(user_code, verification_uri):
+def show_device_login_dialog(plugin, user_code, verification_uri):
     """
-    Display QR code + user_code in a Kodi dialog.
+    Display instructions and user code to authenticate on another device
     """
     xbmcgui.Dialog().ok(
-        "ARTE Smart‑TV Login",
-        f"Enter the code {user_code} at {verification_uri} from your mobile device or computer."
+        plugin.addon.getLocalizedString(30048),
+        plugin.addon.getLocalizedString(30049).format(
+            user_code=user_code, verification_uri=verification_uri)
     )
-
-    # qr = qrcode.make(verification_uri_complete)
-    # qr_path = xbmcmixin.temp_fn("arte_tvlogin_qr.png")
-    # qr.save(stream=qr_path, format="PNG")
-    # # buffer = BytesIO()
-    # # with open(qr_path, "wb") as qr_file:
-    # #     qr_file.write(buffer.getvalue())
-    # show_qr_window(qr_path, user_code, verification_uri)
-
-
-# def show_qr_window(qr_path, user_code, verification_uri):
-#     """
-#     Display a window with QR code and information to authenticate.
-#     """
-#     win = xbmcgui.WindowDialog()
-
-#     lbl = xbmcgui.ControlLabel(
-#         200, 720, 600, 40,
-#         f"Enter the code [b]{user_code}[/b] at [{verification_uri}] on your mobile.\n\
-#         Or scan the QR code.",
-#         textColor="white", alignment=2)
-#     img = xbmcgui.ControlImage(200, 100, 600, 600, qr_path)
-
-#     win.addControl(img)
-#     win.addControl(lbl)
-
-#     win.doModal()
-#     del win
 
 
 def poll_device_token(device_code, interval):
@@ -226,7 +196,7 @@ def poll_device_token(device_code, interval):
 
 
 # ---------------------------------------------------------------------------
-# EXISTING UTILITIES (unchanged)
+# LOGOUT
 # ---------------------------------------------------------------------------
 
 
@@ -250,6 +220,10 @@ def logout(plugin, settings):
     update_settings_state(plugin, '')
     plugin.notify(msg=plugin.addon.getLocalizedString(30018), image='info')
     return True
+
+# ---------------------------------------------------------------------------
+# EXISTING UTILITIES
+# ---------------------------------------------------------------------------
 
 
 def update_settings_state(plugin, email):
