@@ -93,7 +93,6 @@ _COOKIES = {
 _ARTETV_ID_URL = 'https://id.arte.tv/auth/realms/myarte-prod/protocol/openid-connect'
 DEVICE_AUTH_URL = f"{_ARTETV_ID_URL}/auth/device"
 DEVICETOKEN_URL = f"{_ARTETV_ID_URL}/token"
-REVOKE_URL = f"{_ARTETV_ID_URL}/revoke"
 SMART_TV_CLIENT_ID = 'smart-tv'
 
 
@@ -452,31 +451,3 @@ def device_token_request(device_code):
     except Exception as e:
         xbmc.log(f"Device token polling exception: {e}", level=xbmc.LOGERROR)
         return {"error": "exception"}
-
-
-def revoke_token(token):
-    """
-    Revoke ARTE OAuth2 token (refresh_token recommended with auto-cascade access token).
-    Returns True on success, False otherwise.
-    """
-    try:
-        payload = {
-            "client_id": SMART_TV_CLIENT_ID,
-            "token": token,
-            "token_type_hint": "refresh_token"
-        }
-
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-
-        resp = requests.post(REVOKE_URL, data=payload, headers=headers, timeout=10)
-        logger.log_json(resp, 'artetv_revoketoken')
-
-        # Keycloak returns 200 even if token was already invalid
-        return resp.status_code == 200
-
-    # pylint: disable=broad-except
-    except Exception as e:
-        xbmc.log(f"Token revocation exception: {e}", level=xbmc.LOGERROR)
-        return False
