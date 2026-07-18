@@ -217,7 +217,7 @@ def search_page(zone_id, page, query):
 @plugin.route('/user/login', name='user_login')
 def user_login():
     """Login user with email already set in settings by creating and persisting a token."""
-    return plugin.finish(succeeded=user.login(plugin, settings))
+    return plugin.finish(succeeded=user.login(plugin))
 
 
 @plugin.route('/user/logout', name='user_logout')

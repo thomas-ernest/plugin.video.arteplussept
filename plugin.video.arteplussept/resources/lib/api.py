@@ -50,6 +50,9 @@ ARTETV_ENDPOINTS = {
     # PATCH empty payload
     # needs token in authorization header
     'purge_last_viewed': '/sso/v3/lastvieweds/purge',
+    # GET personal user data (email, firstName, lastName, etc.)
+    # needs token in authorization header
+    'personal_data': '/sso/v3/me',
     # program_id can be 103520-000-A or LIVE
     'player': '/player/v2/config/{lang}/{program_id}',
     'program': '/emac/v4/{lang}/web/programs/{program_id}',
@@ -69,8 +72,6 @@ ARTETV_ENDPOINTS = {
     # date=2023-01-17
     # 'guide_tv': '/emac/v3/{lang}/{client}/pages/TV_GUIDE/?day={DATE}',
     # auth api
-    'custom_token': '/setCustomToken',
-    # auth api
     'login': '/login',
 }
 ARTETV_HEADERS = {
@@ -81,13 +82,6 @@ ARTETV_HEADERS = {
     # prefer client tv over web so that Arte adapt content to tv limiting links for instance
     'client': 'tv',
     'accept': 'application/json'
-}
-_API_KEY = '97598990-f0af-427b-893e-9da348d9f5a6'
-_COOKIES = {
-    'TCPID': '123261154911117061452',
-    # pylint: disable=line-too-long
-    'TC_PRIVACY': '1%40031%7C29%7C3445%40%40%401677322453596%2C1677322453596%2C1711018453596%40',
-    'TC_PRIVACY_CENTER': None
 }
 
 _ARTETV_ID_URL = 'https://id.arte.tv/auth/realms/myarte-prod/protocol/openid-connect'
@@ -191,6 +185,19 @@ def purge_last_viewed(tkn):
     reply = requests.patch(url, data={}, headers=headers, timeout=10)
     logger.log_json(reply, 'artetv_purgelastviewed')
     return reply.status_code
+
+
+def get_personal_data(tkn):
+    """
+    Retrieve personal user data (email, firstName, lastName, etc.) from Arte API.
+    Requires authenticated token.
+    Returns the user data dict from API response or None if request fails.
+    """
+    url = _ARTETV_URL + ARTETV_ENDPOINTS['personal_data']
+    reply = _load_json_personal_content('artetv_getpersonaldata', url, tkn)
+    if reply is not None and isinstance(reply.get('data'), list) and len(reply.get('data', [])) > 0:
+        return reply['data'][0]
+    return None
 
 
 def player_video(lang, program_id):
