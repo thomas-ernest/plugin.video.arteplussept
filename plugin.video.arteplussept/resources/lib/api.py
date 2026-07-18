@@ -50,6 +50,9 @@ ARTETV_ENDPOINTS = {
     # PATCH empty payload
     # needs token in authorization header
     'purge_last_viewed': '/sso/v3/lastvieweds/purge',
+    # GET personal user data (email, firstName, lastName, etc.)
+    # needs token in authorization header
+    'personal_data': '/sso/v3/me',
     # program_id can be 103520-000-A or LIVE
     'player': '/player/v2/config/{lang}/{program_id}',
     'program': '/emac/v4/{lang}/web/programs/{program_id}',
@@ -69,8 +72,6 @@ ARTETV_ENDPOINTS = {
     # date=2023-01-17
     # 'guide_tv': '/emac/v3/{lang}/{client}/pages/TV_GUIDE/?day={DATE}',
     # auth api
-    'custom_token': '/setCustomToken',
-    # auth api
     'login': '/login',
 }
 ARTETV_HEADERS = {
@@ -82,13 +83,11 @@ ARTETV_HEADERS = {
     'client': 'tv',
     'accept': 'application/json'
 }
-_API_KEY = '97598990-f0af-427b-893e-9da348d9f5a6'
-_COOKIES = {
-    'TCPID': '123261154911117061452',
-    # pylint: disable=line-too-long
-    'TC_PRIVACY': '1%40031%7C29%7C3445%40%40%401677322453596%2C1677322453596%2C1711018453596%40',
-    'TC_PRIVACY_CENTER': None
-}
+
+_ARTETV_ID_URL = 'https://id.arte.tv/auth/realms/myarte-prod/protocol/openid-connect'
+DEVICE_AUTH_URL = f"{_ARTETV_ID_URL}/auth/device"
+DEVICETOKEN_URL = f"{_ARTETV_ID_URL}/token"
+SMART_TV_CLIENT_ID = 'smart-tv'
 
 
 def get_favorites(lang, tkn, page_idx, page_size=50):
@@ -186,6 +185,19 @@ def purge_last_viewed(tkn):
     reply = requests.patch(url, data={}, headers=headers, timeout=10)
     logger.log_json(reply, 'artetv_purgelastviewed')
     return reply.status_code
+
+
+def get_personal_data(tkn):
+    """
+    Retrieve personal user data (email, firstName, lastName, etc.) from Arte API.
+    Requires authenticated token.
+    Returns the user data dict from API response or None if request fails.
+    """
+    url = _ARTETV_URL + ARTETV_ENDPOINTS['personal_data']
+    reply = _load_json_personal_content('artetv_getpersonaldata', url, tkn)
+    if reply is not None and isinstance(reply.get('data'), list) and len(reply.get('data', [])) > 0:
+        return reply['data'][0]
+    return None
 
 
 def player_video(lang, program_id):
@@ -353,23 +365,6 @@ def _add_auth_token(tkn, hdrs):
     return headers
 
 
-def get_and_persist_token_in_arte(plugin, username, password):
-    """Log in user thanks to his/her settings and get a bearer token.
-    Return None if:
-        - any parameter is empty
-        - silenty if both parameters are empty
-        - with a notification if one is not empty
-        - connection to arte tv failed"""
-
-    tokens = authenticate_in_arte(plugin, username, password)
-    # exit if authentication failed
-    if not tokens:
-        return None
-
-    # return persisted or unpersisted token anyway
-    return tokens
-
-
 def authenticate_in_arte(plugin, username='', password='', headers=None):
     """Return None if authentication failed and display an error notification
     Return arte reply with access and refresh tokens if authentication was successfull
@@ -392,7 +387,7 @@ def authenticate_in_arte(plugin, username='', password='', headers=None):
     try:
         # https://requests.readthedocs.io/en/latest/
         reply = requests.post(url, data=token_data, headers=headers, timeout=10)
-        logger.log_json(reply, 'artetv_auth')
+        logger.log_json(reply, 'artetv_auth_password')
     except requests.exceptions.ConnectionError as err:
         # unable to auth. e.g.
         # HTTPSConnectionPool(host='api.arte.tv', port=443):
@@ -406,55 +401,60 @@ def authenticate_in_arte(plugin, username='', password='', headers=None):
     return reply.json(object_pairs_hook=OrderedDict)
 
 
-def persist_token_in_arte(plugin, tokens, headers=None):
-    """Calls the sequence of 2 services to be able to reuse authentication token
-    Return True, if token is persisted, False otherwise.
-    Notify the user with a warning if persistance failed.
+def device_authorization_request():
     """
-    if headers is None:
-        headers = ARTETV_HEADERS
-    # set client to web, because with tv get error client_invalid, error Client not authorized
-    headers['client'] = 'web'
-
-    # step 1/2 : get additional cookies for step 2.
-    url = _ARTETV_AUTH_URL + ARTETV_ENDPOINTS['custom_token']
-    params = {
-        'shouldValidateAnonymous': False,
-        'token': tokens['access_token'],
-        'apikey': _API_KEY,
-        'isrememberme': True
-    }
-    error = None
-    cstm_tkn = None
+    Step 1 of ARTE Smart TV Device Flow:
+    Request device_code + user_code from Keycloak.
+    Returns dict or None.
+    """
     try:
-        cstm_tkn = requests.get(url, params=params, headers=headers, cookies=_COOKIES, timeout=10)
-        logger.log_json(cstm_tkn, 'artetv_customtoken')
-    except requests.exceptions.ConnectionError as err:
-        error = err
-    if error or not cstm_tkn or cstm_tkn.status_code != 200:
-        err_dtls = str(error) if error else (cstm_tkn.text if cstm_tkn is not None else '')
-        xbmc.log(
-            f"Unable to persist Arte TV token {tokens['access_token']}. Step 1/2: {err_dtls}",
-            level=xbmc.LOGERROR)
-        plugin.notify(msg=plugin.addon.getLocalizedString(30020), image='warning')
-        return False
+        payload = {
+            "client_id": SMART_TV_CLIENT_ID,
+            "scope": "openid"
+        }
 
-    # step 2/2 : persist / remember token so that it can be reused
-    url = _ARTETV_AUTH_URL + ARTETV_ENDPOINTS['login']
-    params = {'shouldValidateAnonymous': 'false', 'apikey': _API_KEY}
-    cookies = hof.merge_dicts(_COOKIES, cstm_tkn.cookies)
-    login = None
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+        resp = requests.post(DEVICE_AUTH_URL, data=payload, headers=headers, timeout=10)
+        logger.log_json(resp, 'artetv_deviceauth')
+        if resp.status_code != 200:
+            xbmc.log(f"Device authorization failed: HTTP {resp.status_code}", level=xbmc.LOGERROR)
+            return None
+
+        return resp.json()
+
+    # pylint: disable=broad-except
+    except Exception as e:
+        xbmc.log(f"Device authorization exception: {e}", level=xbmc.LOGERROR)
+        return None
+
+
+def device_token_request(device_code):
+    """
+    Step 2 of ARTE Smart TV Device Flow:
+    Poll token endpoint using device_code.
+    Returns dict containing either:
+    - access_token (success)
+    - error (authorization_pending, slow_down, access_denied, expired_token)
+    """
     try:
-        login = requests.get(url, params=params, headers=headers, cookies=cookies, timeout=10)
-        logger.log_json(login, 'artetv_login')
-    except requests.exceptions.ConnectionError as err:
-        error = err
-    if error or not login or login.status_code != 200:
-        err_dtls = str(error) if error else (login.text if login is not None else '')
-        xbmc.log(
-            f"Unable to persist Arte TV token {tokens['access_token']}. Step 2/2: {err_dtls}",
-            level=xbmc.LOGERROR)
-        plugin.notify(msg=plugin.addon.getLocalizedString(30020), image='warning')
-        return False
+        payload = {
+            "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+            "device_code": device_code,
+            "client_id": SMART_TV_CLIENT_ID
+        }
 
-    return True
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+        resp = requests.post(DEVICETOKEN_URL, data=payload, headers=headers, timeout=10)
+        logger.log_json(resp, 'artetv_auth_devicetoken')
+        return resp.json()
+
+    # pylint: disable=broad-except
+    except Exception as e:
+        xbmc.log(f"Device token polling exception: {e}", level=xbmc.LOGERROR)
+        return {"error": "exception"}

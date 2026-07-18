@@ -28,8 +28,6 @@ class Settings:
         # Arte TV user name
         # defaults to empty string to return false with if not str
         self.username = plugin.get_setting(
-            'username') or ""
-        self.user_mail = plugin.get_setting(
             'user_email') or ""
         # Enable additional logs managed by plugin : API messages
         self.loglevel = plugin.get_setting(

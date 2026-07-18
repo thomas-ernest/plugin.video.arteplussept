@@ -3,7 +3,7 @@ Manage Arte user content and state e.g. favorites and last vieweds.
 Manage settings and user interactions to create a token.
 Manage token in cache. Avoid storing password in settings, only token.
 """
-
+import time
 # pylint: disable=import-error
 from xbmcswift2 import xbmc
 from xbmcswift2 import xbmcgui
@@ -16,48 +16,58 @@ _STORAGE_KEY = 'token'
 _TTL = 30*24*60
 
 
-def login(plugin, settings):
+def login(plugin):
     """
-    Get user password from UI, create a token with Arte API, persist it in storage
-    and update settings state to show user is logged in.
+    Unified login entry point.
+    User chooses between:
+    - Smart TV Device login
+    - Password login
     """
     erase_password_in_old_config(plugin)
 
-    # ensure user to log in is identified
-    usr = settings.username
-    if not usr:
-        msg = f"{plugin.addon.getLocalizedString(30020)} : {plugin.addon.getLocalizedString(30021)}"
-        plugin.notify(msg=msg, image='error')
+    choice = xbmcgui.Dialog().select(
+        plugin.addon.getLocalizedString(30057),
+        [
+            plugin.addon.getLocalizedString(30046),
+            plugin.addon.getLocalizedString(30047)
+        ]
+    )
+    if choice == 0:
+        return login_with_device_flow(plugin)
+    if choice == 1:
+        return login_with_password(plugin)
+    return False
+
+
+# ---------------------------------------------------------------------------
+# PASSWORD LOGIN
+# ---------------------------------------------------------------------------
+
+def login_with_password(plugin):
+    """
+    Get user email and password from UI, create a token with Arte API, persist it in storage
+    and update settings state to show user is logged in.
+    """
+    # get email from user
+    email = get_user_email(plugin)
+    if not email:
+        xbmc.log('Authentication aborted by user - no email entered', level=xbmc.LOGWARNING)
+        plugin.notify(msg=plugin.addon.getLocalizedString(30020), image='error')
         return False
 
-    # ensure no user is not logged in
-    loggedin_usr = settings.user_email
-    tkn_data = get_cached_token(plugin, usr, True)
-    if len(loggedin_usr) > 0 and tkn_data:
-        xbmc.log(
-            f"\"{loggedin_usr}\" already authenticated to Arte TV : {tkn_data['access_token']}",
-            level=xbmc.LOGINFO)
-        # notify user that current token might be replaced
-        accept_to_replace = xbmcgui.Dialog().yesno(
-            plugin.addon.getLocalizedString(30015),
-            plugin.addon.getLocalizedString(30016).format(new_user=usr, old_user=loggedin_usr),
-            autoclose=10000
-        )
-        # user didn't accept replacement, so leave
-        if not accept_to_replace:
-            xbmc.log('Authentication aborted by user - keep initial token', level=xbmc.LOGWARNING)
-            return False
+    # if user already logged in with this email and token is valid, confirm s/he wants to override
+    if not want_to_continue_or_override_auth(plugin, email):
+        return False
 
     # get password
     pwd = get_user_password(plugin)
     if not pwd:
         xbmc.log('Authentication aborted by user - no password entered', level=xbmc.LOGWARNING)
-        msg = f"{plugin.addon.getLocalizedString(30020)} : {plugin.addon.getLocalizedString(30022)}"
-        plugin.notify(msg=msg, image='error')
+        plugin.notify(msg=plugin.addon.getLocalizedString(30020), image='error')
         return False
 
     # get token for user and password
-    tokens = api.get_and_persist_token_in_arte(plugin, usr, pwd)
+    tokens = api.authenticate_in_arte(plugin, email, pwd)
     if tokens is None:
         xbmc.log('Authentication failed in arte', level=xbmc.LOGERROR)
         msg = f"{plugin.addon.getLocalizedString(30020)}"
@@ -65,10 +75,52 @@ def login(plugin, settings):
         return False
 
     # store token
-    set_cached_token(plugin, usr, tokens)
-    update_settings_state(plugin, usr)
-    msg = plugin.addon.getLocalizedString(30017).format(user=usr)
+    set_cached_token(plugin, email, tokens)
+    set_auth_user_settings(plugin, email)
+    msg = plugin.addon.getLocalizedString(30017).format(user=email)
     plugin.notify(msg=msg, image='info')
+    return True
+
+
+def get_user_email(plugin):
+    """
+    Display a keyboard to get user email.
+    Return None if user didn't enter an email or close the UI.
+    """
+    user_email = ''
+    keyboard = xbmc.Keyboard(user_email, plugin.addon.getLocalizedString(30019), False)
+    keyboard.doModal()
+    if keyboard.isConfirmed() is False:
+        return None
+    user_email = keyboard.getText()
+    if len(user_email) == 0:
+        return None
+    return user_email
+
+
+def want_to_continue_or_override_auth(plugin, new_user):
+    """
+    If user already authenticated (with a valid token and) with same email,
+    confirm that s/he wants to override her/his token.
+    Return False if user confirms replacement, True otherwise.
+    Return true, if token is invalid or emails are different.
+    """
+    # assuming that new user's email and old user's email are the same,
+    # since token can be retrieved/is indexed by email.
+    current_tkn = get_cached_token(plugin, new_user, True)
+    if current_tkn:
+        xbmc.log(f"\"{new_user}\" already authenticated : {current_tkn['access_token']}")
+        # notify user that current token might be replaced
+        accept_to_replace = xbmcgui.Dialog().yesno(
+            plugin.addon.getLocalizedString(30015),
+            # old_user=new_user highlight the unsual situation
+            plugin.addon.getLocalizedString(30016).format(new_user=new_user, old_user=new_user),
+            autoclose=10000
+        )
+        # user didn't accept replacement, so leave
+        if not accept_to_replace:
+            xbmc.log('Authentication aborted by user - keep initial token', level=xbmc.LOGWARNING)
+            return False
     return True
 
 
@@ -88,19 +140,125 @@ def get_user_password(plugin):
     return user_password
 
 
+# ---------------------------------------------------------------------------
+# SMART TV DEVICE FLOW LOGIN
+# ---------------------------------------------------------------------------
+
+def login_with_device_flow(plugin):
+    """
+    Smart TV Device Authorization Flow:
+    1. Request device_code + user_code
+    2. Show instructions and code to authenticate on another device
+    3. Poll token endpoint until success
+    4. Retrieve email from personal data endpoint
+    5. Store token
+    """
+    # Step 1 - request device_code
+    device_info = api.device_authorization_request()
+    if not device_info:
+        plugin.notify(plugin.addon.getLocalizedString(30020), image='error')
+        return False
+
+    device_code = device_info["device_code"]
+    user_code = device_info["user_code"]
+    verification_uri = device_info["verification_uri"]
+    # verification_uri_complete = device_info["verification_uri_complete"]
+    interval = device_info.get("interval", 5)
+
+    # Step 2 - show instructions and code to authenticate on another device
+    show_device_login_dialog(plugin, user_code, verification_uri)
+
+    # Step 3 - poll token endpoint
+    tokens = poll_device_token(device_code, interval)
+    if tokens is None:
+        plugin.notify(plugin.addon.getLocalizedString(30020), image='error')
+        return False
+
+    # Step 4 - retrieve email from personal data endpoint
+    user_data = api.get_personal_data(tokens)
+    if user_data is None:
+        xbmc.log('Failed to retrieve personal data from Arte API', level=xbmc.LOGERROR)
+        plugin.notify(plugin.addon.getLocalizedString(30020), image='error')
+        return False
+
+    email = user_data.get('email')
+    if not email:
+        xbmc.log('Email not found in personal data from Arte API', level=xbmc.LOGERROR)
+        plugin.notify(plugin.addon.getLocalizedString(30020), image='error')
+        return False
+
+    # Step 5 - store token
+    set_cached_token(plugin, email, tokens)
+    set_auth_user_settings(plugin, email)
+    msg = plugin.addon.getLocalizedString(30017).format(user=email)
+    plugin.notify(msg=msg, image='info')
+    return True
+
+
+def show_device_login_dialog(plugin, user_code, verification_uri):
+    """
+    Display instructions and user code to authenticate on another device
+    """
+    xbmcgui.Dialog().ok(
+        plugin.addon.getLocalizedString(30048),
+        plugin.addon.getLocalizedString(30049).format(
+            user_code=user_code, verification_uri=verification_uri)
+    )
+
+
+def poll_device_token(device_code, interval):
+    """
+    Poll ARTE token endpoint until:
+    - authorization_pending
+    - slow_down
+    - success (returns tokens)
+    - error (returns None)
+    """
+    while True:
+        data = api.device_token_request(device_code)
+
+        if "access_token" in data:
+            return data
+
+        error = data.get("error")
+
+        if error == "authorization_pending":
+            time.sleep(interval)
+            continue
+
+        if error == "slow_down":
+            interval += 5
+            time.sleep(interval)
+            continue
+
+        xbmc.log(f"Device login error: {error}", level=xbmc.LOGERROR)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# LOGOUT
+# ---------------------------------------------------------------------------
+
+
 def logout(plugin, settings):
     """Delete user token and reset settings state"""
     erase_password_in_old_config(plugin)
 
+    # Possible improve - revoke token remotely or logout
+
+    # clear token locally
     set_cached_token(plugin, settings.username, '')
     clear_cached_tokens(plugin)
-    update_settings_state(plugin, '')
-
+    set_auth_user_settings(plugin, '')
     plugin.notify(msg=plugin.addon.getLocalizedString(30018), image='info')
     return True
 
+# ---------------------------------------------------------------------------
+# EXISTING UTILITIES
+# ---------------------------------------------------------------------------
 
-def update_settings_state(plugin, email):
+
+def set_auth_user_settings(plugin, email):
     """Update setting state to know who belong the token to"""
     message = plugin.addon.getLocalizedString(30017).format(user=email)
     if email is None or len(email) <= 0:
@@ -143,4 +301,4 @@ def erase_password_in_old_config(plugin):
     to authenticate user.
     Deprecated since creation JUL2023, v1.3.0.
     """
-    return plugin.set_setting('password', '')
+    return plugin.set_setting('password', '') and plugin.set_setting('username', '')

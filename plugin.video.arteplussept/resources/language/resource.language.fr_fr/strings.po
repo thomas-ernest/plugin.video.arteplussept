@@ -93,6 +93,22 @@ msgctxt "#30022"
 msgid "Password missing"
 msgstr "Mot de passe manquant"
 
+msgctxt "#30046"
+msgid "Login with Smart TV code on another device"
+msgstr "S'authentifier avec un code de la Smart TV sur un autre appareil"
+
+msgctxt "#30047"
+msgid "Login with email & password"
+msgstr "S'authentifier avec son email et son mot de passe"
+
+msgctxt "#30048"
+msgid "ARTE Smart TV Login"
+msgstr "Authentification ARTE Smart TV"
+
+msgctxt "#30049"
+msgid "Enter the code \"{user_code}\" at \"{verification_uri}\" on your mobile device or computer."
+msgstr "Veuillez saisir le code \"{user_code}\" à l'adresse \"{verification_uri}\" sur votre mobile ou votre ordinateur."
+
 
 msgctxt "#30023"
 msgid "Add to Arte favorites"
