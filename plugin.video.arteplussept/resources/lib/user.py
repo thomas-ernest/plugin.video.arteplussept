@@ -122,7 +122,9 @@ def is_logged_in_as(plugin):
 def get_cached_token(plugin, token_idx, silent=False):
     """
     Return cached token for identified user or None.
-    If user logged in and later changed the user email, it returns None
+    If no token is in cache and silent is not True, then it warns user
+    about the need to authenticate.
+    If user logged in and later changed the user email, it returns None.
     """
     cached_token = plugin.get_storage(_STORAGE_KEY, TTL=_TTL)
     if token_idx in cached_token and isinstance(cached_token[token_idx], dict):

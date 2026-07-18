@@ -62,20 +62,17 @@ def mark_as_watched(plugin, usr, program_id, label):
     in order to mark a program as watched
     """
     status = -1
-    try:
-        program_info = api.player_video(stg.languages[0], program_id)
-        total_time = program_info.get('attributes').get('metadata').get('duration').get('seconds')
-        status = api.sync_last_viewed(user.get_cached_token(plugin, usr), program_id, total_time)
-    # pylint: disable=broad-exception-caught
-    except Exception as excp:
-        xbmc.log(f" exception caught :{str(excp)}")
-
-    if 200 == status:
-        msg = plugin.addon.getLocalizedString(30036).format(label=label)
-        plugin.notify(msg=msg, image='info')
-    else:
-        msg = plugin.addon.getLocalizedString(30037).format(label=label)
-        plugin.notify(msg=msg, image='error')
+    program_info = api.player_video(stg.languages[0], program_id)
+    total_time = program_info.get('attributes').get('metadata').get('duration').get('seconds')
+    auth_token = user.get_cached_token(plugin, usr)
+    if auth_token:
+        status = api.sync_last_viewed(auth_token, program_id, total_time)
+        if 200 == status:
+            msg = plugin.addon.getLocalizedString(30036).format(label=label)
+            plugin.notify(msg=msg, image='info')
+        else:
+            msg = plugin.addon.getLocalizedString(30037).format(label=label)
+            plugin.notify(msg=msg, image='error')
 
 
 def build_mixed_collection(plugin, kind, collection_id, settings):
