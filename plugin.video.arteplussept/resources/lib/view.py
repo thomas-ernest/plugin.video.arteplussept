@@ -25,7 +25,8 @@ def build_home_page(plugin, settings, cached_categories):
     except Exception as error:
         xbmc.log("Unable to build live stream item with " +
                  f"lang:{settings.language} quality:{settings.quality} " +
-                 f"because \"{str(error)}\"")
+                 f"because \"{str(error)}\"",
+                 level=xbmc.LOGERROR)
 
     try:
         arte_home = api.page_content(settings.language)
@@ -37,7 +38,8 @@ def build_home_page(plugin, settings, cached_categories):
     except Exception as error:
         xbmc.log("Unable to build home items with " +
                  f"lang:{settings.language} quality:{settings.quality} " +
-                 f"because \"{str(error)}\"")
+                 f"because \"{str(error)}\"",
+                 level=xbmc.LOGERROR)
 
     return addon_menu
 
