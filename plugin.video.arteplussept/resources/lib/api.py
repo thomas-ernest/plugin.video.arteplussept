@@ -304,6 +304,11 @@ def get_zone_page(lang, zone_id, page_idx):
     """
     Navigate in pages of a zone identified by zone_id.
     """
+    # fix "bug" in Arte TV API of doubled zone_id. Example of wrong value:
+    # a6f8c6d2-29d8-44e6-95f3-eec44d2fedaa_a6f8c6d2-29d8-44e6-95f3-eec44d2fedaa
+    parts = zone_id.split('_')
+    if len(parts) == 2 and parts[0] == parts[1]:
+        zone_id = parts[0]
     url = _ARTETV_URL + ARTETV_ENDPOINTS['zonepage'].format(
         lang=lang, client='tv', zone_id=zone_id, country=lang.upper(), page=page_idx)
     return _load_json_full_url('artetv_getzonepage', url, ARTETV_HEADERS)
