@@ -5,8 +5,8 @@ Manage token in cache. Avoid storing password in settings, only token.
 """
 import time
 # pylint: disable=import-error
-from xbmcswift2 import xbmc
-from xbmcswift2 import xbmcgui
+import xbmc
+import xbmcgui
 
 from resources.lib import api
 

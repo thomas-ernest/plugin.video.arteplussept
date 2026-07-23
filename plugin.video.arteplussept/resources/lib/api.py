@@ -3,7 +3,7 @@ from collections import OrderedDict
 # pylint: disable=import-error
 import requests
 # pylint: disable=import-error
-from xbmcswift2 import xbmc
+import xbmc
 from resources.lib import hof
 from resources.lib import logger
 

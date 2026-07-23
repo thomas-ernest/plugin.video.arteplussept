@@ -7,9 +7,8 @@ import datetime
 # pylint: disable=import-error
 import dateutil.parser
 # pylint: disable=import-error
-from xbmcswift2 import xbmc
-# pylint: disable=import-error
-from xbmcswift2 import actions
+import xbmc
+from resources.lib import actions
 from resources.lib import utils
 
 
