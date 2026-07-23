@@ -3,7 +3,7 @@ Module for Arte Search
 """
 
 # pylint: disable=import-error
-from xbmcswift2 import xbmc
+import xbmc
 from resources.lib import api
 from resources.lib.mapper.artecollection import ArteCollection
 

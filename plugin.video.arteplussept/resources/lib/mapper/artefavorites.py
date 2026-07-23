@@ -3,7 +3,7 @@ Module for Arte Favorites
 """
 
 # pylint: disable=import-error
-from xbmcswift2 import xbmcgui
+import xbmcgui
 from resources.lib import api
 from resources.lib import user
 from resources.lib.mapper.artecollection import ArteCollection

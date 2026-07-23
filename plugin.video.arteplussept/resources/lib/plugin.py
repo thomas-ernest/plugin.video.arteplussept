@@ -3,9 +3,9 @@
 import xbmcaddon
 import xbmcgui
 # pylint: disable=import-error
-from xbmcswift2 import Plugin
+from resources.lib.native_plugin import Plugin
 # pylint: disable=import-error
-from xbmcswift2 import xbmc
+import xbmc
 from resources.lib import logger
 from resources.lib import user
 from resources.lib import view

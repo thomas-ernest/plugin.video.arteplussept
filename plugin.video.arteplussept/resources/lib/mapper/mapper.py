@@ -1,6 +1,6 @@
 """Map JSON API outputs into playable content and meanus for Kodi"""
 # pylint: disable=import-error
-from xbmcswift2 import xbmc
+import xbmc
 from resources.lib import hof
 from resources.lib import utils
 from resources.lib.mapper.arteitem import ArteVideoItem
