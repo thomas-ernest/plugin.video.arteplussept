@@ -4,9 +4,9 @@ import json
 from os.path import join as OSPJoin
 from datetime import datetime
 # pylint: disable=import-error
-from xbmcswift2 import Plugin
+from resources.lib.native_plugin import Plugin
 # pylint: disable=import-error
-from xbmcswift2 import xbmcvfs
+import xbmcvfs
 from . import settings
 
 

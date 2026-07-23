@@ -1,6 +1,6 @@
 """Manage views like home menu, dynamic menus, search, favorites..."""
 # pylint: disable=import-error
-from xbmcswift2 import xbmc
+import xbmc
 
 from resources.lib.mapper.arteitem import ArteItem
 from resources.lib.mapper.arteliveitem import ArteLiveItem
