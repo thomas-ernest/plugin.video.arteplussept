@@ -16,6 +16,7 @@ import xbmcaddon
 import xbmcvfs
 import json
 import os
+import time
 
 
 class Plugin:
@@ -53,10 +54,84 @@ class Plugin:
         return self.base_url + '?' + urllib.parse.urlencode(params)
 
     def get_storage(self, key, TTL=None):
-        # Very small shim: return a dict for the key. Not persisted across process.
-        if key not in self._storage:
-            self._storage[key] = {}
-        return self._storage[key]
+        """
+        File-backed storage with TTL support (TTL in minutes).
+        Returns a dict-like object that auto-saves to <storage_path>/storage/<key>.json
+        when modified. If the stored value is older than TTL, storage is reset.
+        """
+        storage_dir = os.path.join(self.storage_path, 'storage')
+        # ensure directory exists (prefer xbmcvfs, fallback to os)
+        try:
+            if not xbmcvfs.exists(storage_dir):
+                xbmcvfs.mkdir(storage_dir)
+        except Exception:
+            try:
+                os.makedirs(storage_dir, exist_ok=True)
+            except Exception:
+                # if neither method works, continue and attempts to read/write will fail later
+                pass
+
+        file_path = os.path.join(storage_dir, f"{key}.json")
+
+        class FileStorageDict(dict):
+            def __init__(self, path, initial):
+                super().__init__(initial or {})
+                self._path = path
+
+            def _save(self):
+                try:
+                    payload = {'created': int(time.time()), 'value': dict(self)}
+                    # write atomically is not guaranteed, but use xbmcvfs for compatibility
+                    with xbmcvfs.File(self._path, 'w') as fh:
+                        fh.write(json.dumps(payload))
+                except Exception as e:
+                    xbmc.log(f"Failed saving storage file {self._path}: {e}", xbmc.LOGWARNING)
+
+            def __setitem__(self, k, v):
+                super().__setitem__(k, v)
+                self._save()
+
+            def __delitem__(self, k):
+                super().__delitem__(k)
+                self._save()
+
+            def clear(self):
+                super().clear()
+                self._save()
+
+            def update(self, *args, **kwargs):
+                super().update(*args, **kwargs)
+                self._save()
+
+            def pop(self, *args, **kwargs):
+                val = super().pop(*args, **kwargs)
+                self._save()
+                return val
+
+        # try to load existing data
+        try:
+            if xbmcvfs.exists(file_path):
+                with xbmcvfs.File(file_path, 'r') as fh:
+                    content = fh.read()
+                if content:
+                    data = json.loads(content)
+                    created = int(data.get('created', 0))
+                    value = data.get('value', {})
+                    if TTL is not None:
+                        # TTL is in minutes
+                        if int(time.time()) - created > int(TTL) * 60:
+                            value = {}
+                    return FileStorageDict(file_path, value)
+        except Exception as e:
+            xbmc.log(f"Failed loading storage file {file_path}: {e}", xbmc.LOGWARNING)
+
+        # no existing file or expired -> create and persist empty storage
+        fsd = FileStorageDict(file_path, {})
+        try:
+            fsd._save()
+        except Exception:
+            pass
+        return fsd
 
     def add_to_playlist(self, collection):
         """Add items (list of dict items with 'path') to the video playlist.
