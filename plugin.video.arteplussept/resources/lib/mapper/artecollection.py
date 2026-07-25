@@ -2,7 +2,6 @@
 Arte Collection is a set of videos or collections like in favorites or history.
 """
 
-# pylint: disable=import-error
 from resources.lib import actions
 from resources.lib.mapper.arteitem import ArteTvVideoItem
 
