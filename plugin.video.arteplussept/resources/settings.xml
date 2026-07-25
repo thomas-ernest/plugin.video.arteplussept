@@ -23,7 +23,7 @@
 			id="loglevel"
 			type="enum"
 			label="30056"
-			values="DEFAULT|API"
+			values="DEFAULT|API|DISPLAY|API+DISPLAY"
 			default="0"/>
 	</category>
 	

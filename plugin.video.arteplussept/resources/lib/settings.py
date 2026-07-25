@@ -6,7 +6,7 @@ languages = ['fr', 'de', 'en', 'es', 'pl', 'it', 'ro']
 # though misleqding the below mapping is correct e.g. SQ is High Quality 720p
 # dict keys must be in same order as in settings.xml
 quality_map = {'Low': 'HQ', 'Medium': 'EQ', 'High': 'SQ'}
-loglevel = ['DEFAULT', 'API']
+loglevel = {'DEFAULT': 'DEFAULT', 'API': 'API', 'DISPLAY': 'DISPLAY', 'API+DISPLAY': 'API+DISPLAY'}
 
 
 @dataclasses.dataclass
@@ -31,6 +31,17 @@ class Settings:
             'username') or ""
         self.user_mail = plugin.get_setting(
             'user_email') or ""
-        # Enable additional logs managed by plugin : API messages
+        # Enable additional logs managed by plugin: API and display object traces
         self.loglevel = plugin.get_setting(
-            'loglevel', choices=loglevel) or loglevel[0]
+            'loglevel', choices=list(loglevel.keys())) or loglevel['DEFAULT']
+
+    def should_log(self, log_type):
+        """Return True when the configured loglevel includes the requested log type."""
+        current_loglevel = self.loglevel
+
+        if log_type == 'API':
+            return current_loglevel in {loglevel['API'], loglevel['API+DISPLAY']}
+        if log_type == 'DISPLAY':
+            return current_loglevel in {loglevel['DISPLAY'], loglevel['API+DISPLAY']}
+        # not current_loglevel or current_loglevel == loglevel['DEFAULT']
+        return False

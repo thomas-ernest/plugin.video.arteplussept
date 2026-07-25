@@ -192,10 +192,10 @@ class ArteTvVideoItem(ArteVideoItem):
                     self.plugin.addon.getLocalizedString(30011),
                     actions.update_view(
                         self.plugin.url_for(
-                            'display_collection', program_id=program_id, kind=kind)))]
+                            'collection', program_id=program_id, kind=kind)))]
             else:
                 # content_type = Content.MENU_ITEM
-                path = self.plugin.url_for('display_collection', kind=kind, program_id=program_id)
+                path = self.plugin.url_for('collection', kind=kind, program_id=program_id)
                 is_playable = False
         else:
             # content_type = Content.VIDEO
@@ -378,7 +378,7 @@ class ArteCollectionItem(ArteItem):
 
         return {
             'label': self.format_title_and_subtitle(),
-            'path': self.plugin.url_for('display_collection', kind=kind, collection_id=program_id),
+            'path': self.plugin.url_for('collection', kind=kind, collection_id=program_id),
             'thumbnail': item.get('imageUrl'),
             'info': {
                 'title': item.get('title'),
