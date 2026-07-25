@@ -1,20 +1,20 @@
 """Main module for Kodi add-on plugin.video.arteplussept"""
 
 # pylint: disable=import-error
-from resources.lib.native_plugin import Plugin
-# pylint: disable=import-error
 import xbmc
+
 from resources.lib import logger
 from resources.lib import user
+from resources.lib import utils
 from resources.lib import view
+from resources.lib.utils import PlayFrom
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
 from resources.lib.mapper.artesearch import ArteSearch
 from resources.lib.mapper.artezone import ArteZone
+from resources.lib.native_plugin import Plugin
 from resources.lib.player import Player
 from resources.lib.settings import Settings
-from resources.lib import utils
-from resources.lib.utils import PlayFrom
 
 # global declarations
 # plugin stuff

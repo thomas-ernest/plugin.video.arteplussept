@@ -5,7 +5,8 @@ This provides:
 - Plugin.url_for(route_name, **kwargs) to build plugin URLs
 - Minimal helpers: set_content, set_resolved_url, play_video, add_to_playlist, get_storage, finish
 
-This is intentionally minimal and tailored to this addon to remove the xbmcswift2 routing dependency.
+This is intentionally minimal and tailored to this addon
+to remove the xbmcswift2 routing dependency.
 """
 import json
 import os
@@ -123,7 +124,8 @@ class RoutingMixin:
                     path = item.get('path')
                     is_playable = item.get('is_playable', False)
                     li = xbmcgui.ListItem(label)
-                    thumb = item.get('thumbnail') or (item.get('properties') or {}).get('fanart_image')
+                    thumb = item.get('thumbnail') or \
+                        (item.get('properties') or {}).get('fanart_image')
                     if thumb:
                         li.setArt({'thumb': thumb})
                     info = item.get('info')
@@ -138,8 +140,8 @@ class RoutingMixin:
                             li.addContextMenuItems(ctx, replaceItems=False)
                         except Exception:
                             pass
-                    xbmcplugin.addDirectoryItem(handle=self.handle, url=path, listitem=li,
-                                                isFolder=(not is_playable))
+                    xbmcplugin.addDirectoryItem(
+                        handle=self.handle, url=path, listitem=li, isFolder=(not is_playable))
                 except Exception as exc:
                     xbmc.log(f"Error rendering menu item: {exc}", xbmc.LOGWARNING)
             try:
@@ -158,9 +160,9 @@ class NotificationMixin:
         self.addon = xbmcaddon.Addon()
         super().__init__(*args, **kwargs)
 
-    def notify(self, msg, image=None, time=5000):
+    def notify(self, msg, image=None, mtime=5000):
         try:
-            xbmcgui.Dialog().notification(self.addon.getAddonInfo('name'), msg, image, time)
+            xbmcgui.Dialog().notification(self.addon.getAddonInfo('name'), msg, image, mtime)
         except Exception:
             xbmc.log(f"Notification: {msg}")
 
@@ -208,7 +210,7 @@ class StorageMixin:
             xbmc.log(f"Failed to get setting {key}", xbmc.LOGWARNING)
             return None
 
-    def get_storage(self, key, TTL=None):
+    def get_storage(self, key, ttl=None):
         """File-backed storage with TTL support (TTL in minutes)."""
         if key in self._storage:
             return self._storage[key]
@@ -258,7 +260,7 @@ class StorageMixin:
                     data = json.loads(content)
                     created = int(data.get('created', 0))
                     value = data.get('value', {})
-                    if TTL is not None and int(time.time()) - created > int(TTL) * 60:
+                    if ttl is not None and int(time.time()) - created > int(ttl) * 60:
                         value = {}
                     storage = FileStorageDict(file_path, value)
         except Exception as exc:
@@ -284,5 +286,5 @@ _default_plugin = Plugin()
 
 
 def get_default_plugin():
+    """Singleton plugin"""
     return _default_plugin
-
