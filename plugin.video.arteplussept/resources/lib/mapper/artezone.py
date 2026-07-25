@@ -2,7 +2,6 @@
 Module for Arte Zone
 """
 
-# pylint: disable=import-error
 from resources.lib import api
 from resources.lib.mapper.artecollection import ArteCollection
 

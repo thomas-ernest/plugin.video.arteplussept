@@ -4,13 +4,12 @@ for map_playable and match_hbbtv
 """
 
 import html
-# pylint: disable=import-error
 from resources.lib import actions
+from resources.lib import utils
+from resources.lib.utils import PlayFrom
 # the goal is to break/limit this dependency as much as possible
 from resources.lib.mapper import mapper
 from resources.lib.mapper.arteitem import ArteTvVideoItem
-from resources.lib import utils
-from resources.lib.utils import PlayFrom
 
 
 class ArteLiveItem(ArteTvVideoItem):

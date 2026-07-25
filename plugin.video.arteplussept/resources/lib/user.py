@@ -6,6 +6,7 @@ Manage token in cache. Avoid storing password in settings, only token.
 import time
 # pylint: disable=import-error
 import xbmc
+# pylint: disable=import-error
 import xbmcgui
 
 from resources.lib import api

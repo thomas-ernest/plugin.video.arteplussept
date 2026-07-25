@@ -1,12 +1,11 @@
 """Utilities to write log files with API and Kodi display traces."""
 
-import json
 from os.path import join as OSPJoin
 from datetime import datetime
-# pylint: disable=import-error
-from resources.lib.native_plugin import Plugin
-# pylint: disable=import-error
+import json
 import xbmcvfs
+
+from resources.lib.native_plugin import Plugin
 from . import settings
 
 
