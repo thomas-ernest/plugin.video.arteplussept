@@ -2,15 +2,15 @@
 # pylint: disable=import-error
 import xbmc
 
+from resources.lib import api
+from resources.lib import hof
+from resources.lib import settings as stg
+from resources.lib import user
+from resources.lib.mapper import mapper
 from resources.lib.mapper.arteitem import ArteItem
 from resources.lib.mapper.arteliveitem import ArteLiveItem
 from resources.lib.mapper.artesearch import ArteSearch
 from resources.lib.mapper.artezone import ArteZone
-from resources.lib import api
-from resources.lib import hof
-from resources.lib.mapper import mapper
-from resources.lib import settings as stg
-from resources.lib import user
 
 
 def build_home_page(plugin, settings, cached_categories):
