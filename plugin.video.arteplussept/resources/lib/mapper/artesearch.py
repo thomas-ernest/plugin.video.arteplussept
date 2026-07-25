@@ -21,7 +21,7 @@ class ArteSearch(ArteCollection):
         """
         return {
             'label': self.plugin.addon.getLocalizedString(30012),
-            'path': self.plugin.url_for('search_default')
+            'path': self.plugin.url_for('init_search')
         }
 
     def init_search(self):

@@ -4,6 +4,7 @@
 from xbmcswift2 import Plugin
 # pylint: disable=import-error
 from xbmcswift2 import xbmc
+from resources.lib import logger
 from resources.lib import user
 from resources.lib import view
 from resources.lib.mapper.artefavorites import ArteFavorites
@@ -23,37 +24,48 @@ settings = Settings(plugin)
 
 
 @plugin.route('/', name='index')
-def index():
+def display_index():
     """Display home menu"""
-    return view.build_home_page(plugin, settings, plugin.get_storage('cached_categories', TTL=60))
+    lst_itms = view.build_home_page(
+        plugin, settings, plugin.get_storage('cached_categories', TTL=60))
+    logger.log_xbmc(lst_itms, 'index')
+    return lst_itms
 
 
-@plugin.route('/api_category/<category_code>', name='api_category')
-def api_category(category_code):
+@plugin.route('/category/api/<category_code>', name='api_category')
+def display_api_category(category_code):
     """Display the menu for a category that needs an api call"""
-    return view.build_api_category(plugin, category_code, settings)
+    lst_itms = view.build_api_category(plugin, category_code, settings)
+    logger.log_xbmc(lst_itms, 'api_category')
+    return lst_itms
 
 
-@plugin.route('/cached_category/<zone_id>', name='cached_category')
-def cached_category(zone_id):
+@plugin.route('/category/cached/<zone_id>', name='cached_category')
+def display_cached_category(zone_id):
     """Display the menu for a category that is stored
     in cache from previous api call like home page"""
-    return view.get_cached_category(zone_id, plugin.get_storage('cached_categories', TTL=60))
+    lst_itms = view.get_cached_category(
+        zone_id, plugin.get_storage('cached_categories', TTL=60))
+    logger.log_xbmc(lst_itms, 'cached_category')
+    return lst_itms
 
 
-@plugin.route('/category_page/<zone_id>/<page>/<page_id>', name='category_page')
-def category_page(zone_id, page, page_id):
+@plugin.route('/category/page/<zone_id>/<page>/<page_id>', name='category_page')
+def display_category_page(zone_id, page, page_id):
     """Display the menu for a category that needs an api call"""
-    return ArteZone(plugin, settings, plugin.get_storage('cached_categories', TTL=60)) \
+    lst_itms = ArteZone(plugin, settings, plugin.get_storage('cached_categories', TTL=60)) \
         .build_menu(zone_id, page, page_id)
+    logger.log_xbmc(lst_itms, 'category_page')
+    return lst_itms
 
 
 @plugin.route('/favorites', name='favorites_default')
 @plugin.route('/favorites/<page>', name='favorites')
-def favorites(page=1):
+def display_favorites(page=1):
     """Display the menu for user favorites"""
-    plugin.set_content('tvshows')
-    return plugin.finish(ArteFavorites(plugin, settings).build_menu(page))
+    lst_itms = ArteFavorites(plugin, settings).build_menu(page)
+    logger.log_xbmc(lst_itms, 'favorites')
+    return lst_itms
 
 
 @plugin.route('/add_favorite/<program_id>/<label>', name='add_favorite')
@@ -88,10 +100,11 @@ def mark_as_watched(program_id, label):
 
 @plugin.route('/last_viewed', name='last_viewed_default')
 @plugin.route('/last_viewed/<page>', name='last_viewed')
-def last_viewed(page=1):
+def display_last_viewed(page=1):
     """Display the menu of user history"""
-    plugin.set_content('tvshows')
-    return plugin.finish(ArteHistory(plugin, settings).build_menu(page))
+    lst_itms = ArteHistory(plugin, settings).build_menu(page)
+    logger.log_xbmc(lst_itms, 'last_viewed')
+    return lst_itms
 
 
 @plugin.route('/purge_last_viewed', name='purge_last_viewed')
@@ -100,24 +113,29 @@ def purge_last_viewed():
     ArteHistory(plugin, settings).purge()
 
 
-@plugin.route('/display_collection/<kind>/<program_id>', name='display_collection')
+@plugin.route('/collection/<kind>/<program_id>', name='collection')
 def display_collection(kind, program_id):
     """Display menu for collection of content"""
-    plugin.set_content('tvshows')
-    return plugin.finish(view.build_mixed_collection(plugin, kind, program_id, settings))
+    lst_itms = view.build_mixed_collection(plugin, kind, program_id, settings)
+    logger.log_xbmc(lst_itms, 'collection')
+    return lst_itms
 
 
 @plugin.route('/streams/<program_id>', name='streams')
-def streams(program_id):
+def display_streams(program_id):
     """Play a multi language content."""
-    return plugin.finish(view.build_video_streams(plugin, settings, program_id))
+    lst_itms = view.build_video_streams(plugin, settings, program_id)
+    logger.log_xbmc(lst_itms, 'streams')
+    return lst_itms
 
 
 @plugin.route('/play_live/<stream_url>/<mpaa>', name='play_live')
 def play_live(stream_url, mpaa):
     """Play live content."""
     utils.warn_if_age_restricted(plugin, mpaa)
-    return plugin.set_resolved_url({'path': stream_url})
+    lst_itm = {'path': stream_url}
+    logger.log_xbmc(lst_itm, 'play_live')
+    return plugin.set_resolved_url(lst_itm)
 
 # Cannot read video new arte tv program API. Blocked by FFMPEG issue #10149
 # @plugin.route('/play_artetv/<program_id>', name='play_artetv')
@@ -164,9 +182,11 @@ def play(kind, program_id, mpaa, play_from=PlayFrom.ITM, audio_slot='1'):
         xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
         # Start playing with the first playlist item
         played_item = plugin.add_to_playlist(sibling_playlist['collection'])[0]
+        logger.log_xbmc(played_item, 'play')
         result = plugin.set_resolved_url()
     else:
         played_item = view.build_stream_url(plugin, settings, kind, program_id, int(audio_slot))
+        logger.log_xbmc(played_item, 'play')
         if play_from == PlayFrom.CTX.value:
             result = plugin.play_video(played_item)
         else:
@@ -193,25 +213,30 @@ def play_collection(kind, collection_id, mpaa):
         playlist['start_program_id'])
     # try to seek parent collection, when out of the context of playlist creation
     # Start playing with the first playlist item
-    result = plugin.set_resolved_url(plugin.add_to_playlist(playlist['collection'])[0])
+    played_item = plugin.add_to_playlist(playlist['collection'])[0]
+    logger.log_xbmc(played_item, 'play_collection')
+    result = plugin.set_resolved_url(played_item)
     utils.warn_if_age_restricted(plugin, mpaa)
     synch_during_playback(synched_player)
     del synched_player
     return result
 
 
-@plugin.route('/search', name='search_default')
-def search_default():
-    """Display the keyboard to search for content. Then, display the menu of search results"""
-    plugin.set_content('tvshows')
-    return plugin.finish(ArteSearch(plugin, settings).init_search())
+@plugin.route('/search', name='init_search')
+def init_search():
+    """Display the keyboard to search for content.
+    Then, display the first page of search results"""
+    lst_itms = ArteSearch(plugin, settings).init_search()
+    logger.log_xbmc(lst_itms, 'search')
+    return lst_itms
 
 
 @plugin.route('/search/<zone_id>/<page>/<query>', name='search')
-def search_page(zone_id, page, query):
-    """Display the keyboard to search for content. Then, display the menu of search results"""
-    plugin.set_content('tvshows')
-    return plugin.finish(ArteSearch(plugin, settings).get_search_page(zone_id, page, query))
+def display_search_page(zone_id, page, query):
+    """Display a given page of search results"""
+    lst_itms = ArteSearch(plugin, settings).get_search_page(zone_id, page, query)
+    logger.log_xbmc(lst_itms, 'search')
+    return lst_itms
 
 
 @plugin.route('/user/login', name='user_login')
