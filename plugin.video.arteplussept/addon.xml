@@ -16,44 +16,39 @@
         <!-- https://github.com/xbmc/xbmc/blob/master/addons/xbmc.addon/metadata.xsd -->
         <summary lang="en_GB">Arte +7</summary>
         <description lang="fr_FR">
-Regardez les vidéos de Arte +7
-Pour toute demande ou reporter un problème:
-https://github.com/thomas-ernest/plugin.video.arteplussept/issues
-Les contributions sont les bienvenues:
-https://github.com/thomas-ernest/plugin.video.arteplussept
+Regardez les vidéos de Arte sur Kodi
+Dons: https://thomas-ernest.github.io/
+Bugs ou demandes: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
         <description lang="de_DE">
-Sehen Sie Videos von Arte +7
-Für Fehlerberichte und Verbesserungsvorschläge:
-https://github.com/thomas-ernest/plugin.video.arteplussept/issues
-Mithilfe ist willkommen:
-https://github.com/thomas-ernest/plugin.video.arteplussept
+Arte-Videos auf Kodi ansehen
+Spenden: https://thomas-ernest.github.io/
+Fehlerberichte oder Anfragen: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
         <description lang="en_GB">
-Watch videos from Arte +7
-For feature requests / issues:
-https://github.com/thomas-ernest/plugin.video.arteplussept/issues
-Contributions are welcome:
-https://github.com/thomas-ernest/plugin.video.arteplussept
+Watch Arte videos on Kodi
+Donations: https://thomas-ernest.github.io/
+Bugs or feature requests: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
         <description lang="it_IT">
-Guarda video da Arte +7
-Per richiedere nuove funzionalità o segnalare problemi:
-https://github.com/thomas-ernest/plugin.video.arteplussept/issues
-Nuovi contributi sono ben accetti:
-https://github.com/thomas-ernest/plugin.video.arteplussept
+Guarda i video di Arte su Kodi
+Donazioni: https://thomas-ernest.github.io/
+Segnalazioni di bug o richieste: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
         <description lang="pl_PL">
-Oglądaj wideos z Arte +7
-W przypadku problemów lub próśb o ulepszenie:
-https://github.com/thomas-ernest/plugin.video.arteplussept/issues
-Każda pomoc mile widziana:
-https://github.com/thomas-ernest/plugin.video.arteplussept
+Oglądaj filmy Arte w Kodi
+Darowizny: https://thomas-ernest.github.io/
+Błędy lub prośby: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
-        <language>fr de en it pl</language>
+        <description lang="ro_RO">
+Urmăriți videoclipuri Arte pe Kodi
+Donații: https://thomas-ernest.github.io/
+Erori sau solicitări: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
+        </description>
+        <language>fr de en it pl ro</language>
         <platform>all</platform>
         <license>MIT</license>
-        <website>https://www.arte.tv/fr/</website>
+        <website>https://thomas-ernest.github.io/</website>
         <source>https://github.com/thomas-ernest/plugin.video.arteplussept</source>
 <news>1.5.3 (2026-7-18)
 Fix next page navigation and error messages for non authenticated users
@@ -65,6 +60,9 @@ A single warning is displayed, when a user tries to do something requiering auth
         <assets>
             <icon>resources/icon.png</icon>
             <fanart>resources/fanart.jpg</fanart>
+            <screenshot>resources/screenshot-1.png</screenshot>
+            <screenshot>resources/screenshot-2.png</screenshot>
+            <screenshot>resources/screenshot-3.png</screenshot>
         </assets>
     </extension>
 </addon>

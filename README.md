@@ -32,6 +32,11 @@ Can be used without or with Arte account in order to benefit from a better cross
 
 For feature requests or reporting issues go [here](https://github.com/thomas-ernest/plugin.video.arteplussept/issues).
 
+# Donation
+
+The extension is free. Nevertheless, any donation will motivate me to maintain it.
+Various donation methods are listed at https://thomas-ernest.github.io/
+
 # Contributing
 
 Contributions are welcome !
