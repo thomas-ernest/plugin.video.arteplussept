@@ -1,3 +1,11 @@
+v1.5.4 (2026-7-29)
+
+Non functional changes only
+- Enable logging of data sent to Kodi/XBMC for display.
+- Add link to donation page
+- Harmonize names of routes and &quot;entry&quot; methods
+- Add 3 screenshots
+
 v1.5.3 (2026-7-18)
 
 Fix next page navigation and error messages for non authenticated users
