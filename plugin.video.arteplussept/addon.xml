@@ -15,37 +15,37 @@
                 xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/xbmc/xbmc/master/addons/xbmc.addon/metadata.xsd">
         <!-- https://github.com/xbmc/xbmc/blob/master/addons/xbmc.addon/metadata.xsd -->
         <summary lang="en_GB">Arte +7</summary>
-        <description lang="fr_FR">
-Regardez les vidéos de Arte sur Kodi
-Dons: https://thomas-ernest.github.io/
-Bugs ou demandes: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
-        </description>
         <description lang="de_DE">
-Arte-Videos auf Kodi ansehen
+Geniesse Arte-Videos auf Kodi.
 Spenden: https://thomas-ernest.github.io/
 Fehlerberichte oder Anfragen: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
         <description lang="en_GB">
-Watch Arte videos on Kodi
+Enjoy Arte videos on Kodi.
 Donations: https://thomas-ernest.github.io/
 Bugs or feature requests: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
+        <description lang="fr_FR">
+Profitez des vidéos d&apos;Arte sur Kodi.
+Dons: https://thomas-ernest.github.io/
+Bugs ou demandes: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
+        </description>
         <description lang="it_IT">
-Guarda i video di Arte su Kodi
+Goditi i video di Arte su Kodi.
 Donazioni: https://thomas-ernest.github.io/
 Segnalazioni di bug o richieste: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
         <description lang="pl_PL">
-Oglądaj filmy Arte w Kodi
+Oglądaj filmy Arte w Kodi.
 Darowizny: https://thomas-ernest.github.io/
 Błędy lub prośby: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
         <description lang="ro_RO">
-Urmăriți videoclipuri Arte pe Kodi
+Bucură-te de videoclipuri Arte pe Kodi.
 Donații: https://thomas-ernest.github.io/
 Erori sau solicitări: https://github.com/thomas-ernest/plugin.video.arteplussept/issues
         </description>
-        <language>fr de en it pl ro</language>
+        <language>de en fr it pl ro</language>
         <platform>all</platform>
         <license>MIT</license>
         <website>https://thomas-ernest.github.io/</website>

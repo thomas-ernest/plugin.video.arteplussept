@@ -200,3 +200,18 @@ msgstr "{label} - Ten program zawiera sceny, które nie są odpowiednie dla mło
 msgctxt "#30060"
 msgid "Play from the start"
 msgstr "Odtwórz od początku"
+
+
+msgctxt "#30061"
+msgid "Version {version} installed successfully"
+msgstr "Wersja {version} została pomyślnie zainstalowana"
+
+msgctxt "#30062"
+msgid ""
+"Enjoy Arte videos on Kodi with Arte+7 {version}.\n"
+"Donations: https://thomas-ernest.github.io/\n"
+"Bugs or feature requests: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"
+msgstr ""
+"Oglądaj filmy Arte w Kodi z Arte+7 {version}.\n"
+"Darowizny: https://thomas-ernest.github.io/\n"
+"Błędy lub prośby: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"

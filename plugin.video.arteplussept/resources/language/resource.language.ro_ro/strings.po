@@ -200,3 +200,18 @@ msgstr "{label} - Programul conține scene care nu sunt potrivite pentru oamenii
 msgctxt "#30060"
 msgid "Play from the start"
 msgstr "Joacă de la început"
+
+
+msgctxt "#30061"
+msgid "Version {version} installed successfully"
+msgstr "Versiune {version} instalată cu succes"
+
+msgctxt "#30062"
+msgid ""
+"Enjoy Arte videos on Kodi with Arte+7 {version}.\n"
+"Donations: https://thomas-ernest.github.io/\n"
+"Bugs or feature requests: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"
+msgstr ""
+"Bucură-te de videoclipuri Arte pe Kodi cu Arte+7 {version}.\n"
+"Donații: https://thomas-ernest.github.io/\n"
+"Erori sau solicitări: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"

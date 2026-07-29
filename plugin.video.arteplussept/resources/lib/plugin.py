@@ -1,5 +1,7 @@
 """Main module for Kodi add-on plugin.video.arteplussept"""
 
+import xbmcaddon
+import xbmcgui
 # pylint: disable=import-error
 from xbmcswift2 import Plugin
 # pylint: disable=import-error
@@ -25,7 +27,21 @@ settings = Settings(plugin)
 
 @plugin.route('/', name='index')
 def display_index():
-    """Display home menu"""
+    """
+    Display home menu. On every new version, display a dialog box
+    to remind users where to donate and report issues.
+    """
+    addon = xbmcaddon.Addon()
+    current_version = addon.getAddonInfo("version")
+    last_version = addon.getSetting("last_version_notified")
+
+    if last_version != current_version:
+        xbmcgui.Dialog().ok(
+            addon.getLocalizedString(30061).format(version=current_version),
+            addon.getLocalizedString(30062).format(version=current_version)
+        )
+        addon.setSetting("last_info_version", current_version)
+
     lst_itms = view.build_home_page(
         plugin, settings, plugin.get_storage('cached_categories', TTL=60))
     logger.log_xbmc(lst_itms, 'index')
