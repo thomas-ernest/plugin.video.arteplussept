@@ -1,7 +1,7 @@
 # Arte +7
 
 <p align="center">
-  <img src="https://github.com/thomas-ernest/plugin.video.arteplussept/blob/master/resources/icon.png" alt="Arte +7 logo">
+  <img src="https://github.com/thomas-ernest/plugin.video.arteplussept/blob/master/plugin.video.arteplussept/resources/icon.png" alt="Arte +7 logo">
 </p>
 
 ## Description
@@ -22,7 +22,7 @@ Can be used without or with Arte account in order to benefit from a better cross
 - Resume videos from where you stopped them (cross device) (login required)
 - Manage - view or purge - your Arte history (login required)
 - Manage - view, add, delete or purge - your Arte favorites (login required)
-- Supported language : FR, EN, DE, PL, IT
+- Supported language : DE, EN, FR, IT, PL, RO
 
 ### Not (very well) supported
 - Multiple language content
