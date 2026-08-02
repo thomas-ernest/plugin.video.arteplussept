@@ -1,22 +1,27 @@
 name: Kodi Addon-Checker
 
-on: [push]
+on:
+  push:
+    paths:
+      - 'plugin.video.arteplussept/**'
 
 jobs:
   kodi-addon-checker:
     runs-on: ubuntu-latest
-    name: Kodi Addon-Checker
-    steps:
+    strategy:
+      matrix:
+        python-version: ["3.11"]
 
+    steps:
     - name: Checkout
       uses: actions/checkout@v3
       with:
         fetch-depth: 1
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
       with:
-        python-version: '3.12'
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
