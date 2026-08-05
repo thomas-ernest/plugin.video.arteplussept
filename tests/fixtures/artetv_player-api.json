@@ -1,0 +1,225 @@
+{
+  "data": {
+    "id": "120086-105-A_fr",
+    "type": "ConfigPlayer",
+    "attributes": {
+      "provider": "arte",
+      "metadata": {
+        "providerId": "120086-105-A",
+        "language": "fr",
+        "title": "Invitation au voyage",
+        "subtitle": "Little Nemo à New York / Paris / Suisse",
+        "description": "Linda Lorin nous emmène à la découverte de notre patrimoine artistique, culturel et naturel. À New York, Little Nemo prend vie - Un air de Vietnam à Paris - Au Japon, les futomakis de Miki - En Suisse, les saucisses de la discorde.",
+        "images": [
+          {
+            "url": "https://api-cdn.arte.tv/img/v2/image/KGLevXqz4tJeXuurSeJc4G/940x530",
+            "caption": "Il y a plus de cinq siècles, à Zurich, un simple coup de fourchette et des saucisses fumées ont enflammé tout le pays."
+          }
+        ],
+        "link": {
+          "url": "https://www.arte.tv/fr/videos/120086-105-A/invitation-au-voyage/",
+          "deeplink": "arte://program/120086-105-A",
+          "videoOnDemand": null,
+          "replayUrl": null
+        },
+        "config": {
+          "url": "https://api.arte.tv/api/player/v2/config/fr/LIVE",
+          "replay": "https://api.arte.tv/api/player/v2/config/fr/120086-105-A",
+          "playlist": "https://api.arte.tv/api/player/v2/playlist/fr/LIVE?liveProgramId=120086-105-A",
+          "nextPage": null,
+          "nextEpisode": null,
+          "trailer": null
+        },
+        "duration": {
+          "seconds": 2729
+        },
+        "durationReplay": null,
+        "episodic": false
+      },
+      "live": true,
+      "chapters": null,
+      "rights": {
+        "begin": "2026-08-04T16:15:21+00:00",
+        "end": "2026-08-04T17:00:50+00:00"
+      },
+      "streams": [
+        {
+          "url": "https://artesimulcast.akamaized.net/hls/live/2031003/artelive_fr/index.m3u8",
+          "versions": [
+            {
+              "code": "liveFR",
+              "label": "Direct Français",
+              "shortLabel": "VF",
+              "eStat": {
+                "ml5": "liveFR"
+              },
+              "audioLanguage": "und",
+              "subtitleLanguage": "und",
+              "closedCaptioning": false,
+              "audioDescription": false
+            }
+          ],
+          "mainQuality": {
+            "code": "SQ",
+            "label": "720p"
+          },
+          "slot": 1,
+          "protocol": "HLS",
+          "segments": [],
+          "externalId": null
+        },
+        {
+          "url": "https://artesimulcast.akamaized.net/hls/live/2030993/artelive_de/index.m3u8",
+          "versions": [
+            {
+              "code": "liveDE",
+              "label": "Direct Allemand",
+              "shortLabel": "VA",
+              "eStat": {
+                "ml5": "liveDE"
+              },
+              "audioLanguage": "und",
+              "subtitleLanguage": "und",
+              "closedCaptioning": false,
+              "audioDescription": false
+            }
+          ],
+          "mainQuality": {
+            "code": "SQ",
+            "label": "720p"
+          },
+          "slot": 2,
+          "protocol": "HLS",
+          "segments": [],
+          "externalId": null
+        }
+      ],
+      "stat": {
+        "eStat": {
+          "level1": "CPO_culture-et-pop",
+          "level2": "LIVE_ANTENNE",
+          "level3": "fr",
+          "level4": "ART_arts",
+          "level5": "120086-105-A",
+          "mediaChannel": "18",
+          "mediaContentId": "120086-105-A",
+          "mediaDiffMode": "LIVE",
+          "newLevel1": "LIVE",
+          "newLevel11": "424_magazine-quotidien-de-l-apres-midi",
+          "newLevel2": "manual",
+          "newLevel3": "-",
+          "newLevel4": "-",
+          "streamDuration": 0,
+          "streamGenre": "a",
+          "streamName": "Invitation au voyage",
+          "serial": 266066213484,
+          "prerollSerial": 213013217336
+        },
+        "arte": {
+          "tablet": {
+            "WEB": "https://www.arte.tv/pa/api/multimedia/v1/120086-105/A/fr/LIVE/TABLET/WEB/arte.gif"
+          },
+          "desktop": {
+            "WEB": "https://www.arte.tv/pa/api/multimedia/v1/120086-105/A/fr/LIVE/DESKTOP/WEB/arte.gif"
+          },
+          "mobile": {
+            "WEB": "https://www.arte.tv/pa/api/multimedia/v1/120086-105/A/fr/LIVE/MOBILE/WEB/arte.gif"
+          }
+        },
+        "agf": {
+          "type": "content",
+          "assetid": "120086-105-A_0",
+          "program": "Unknown",
+          "title": "24_7 Livestream",
+          "length": 86400,
+          "nol_c0": "p0,0",
+          "nol_c2": "p2,N",
+          "nol_c5": "p5,https://www.arte.tv/fr/videos/120086-105-A/invitation-au-voyage/",
+          "nol_c7": "p7,120086-105-A",
+          "nol_c9": "p9,24_7 Livestream",
+          "nol_c10": "p10,ARTE",
+          "nol_c12": "p12,Content",
+          "nol_c15": null,
+          "nol_c18": "p18,Y"
+        },
+        "push": {
+          "programId": "120086-105-A",
+          "category": "CPO_culture-et-pop",
+          "subcategory": "ART_arts",
+          "genre": "1_documentaires-et-reportages",
+          "associatedCollections": [
+            "RC-014340",
+            "RC-027956"
+          ]
+        },
+        "serverSideTracking": {
+          "id": "120086-105-A",
+          "slug": "invitation-au-voyage",
+          "programType": "BROADCAST",
+          "category": "CPO",
+          "subcategory": "ART",
+          "genre": 1,
+          "kind": "LIVE",
+          "duration": 2729,
+          "associatedCollections": [
+            "RC-014340",
+            "RC-027956"
+          ],
+          "imageFormat": "HORIZONTAL"
+        },
+        "mediametrie": {
+          "type": "content",
+          "assetid": "120086-105-A_0",
+          "program": "UNKNOWN",
+          "title": "24_7 Livestream",
+          "length": "86400",
+          "islivestn": "y",
+          "cli_md": "LIVE",
+          "cli_ch": "18",
+          "cli_cn": "120086-105-A",
+          "nol_p0": "p0,fr",
+          "nol_p1": "p1,LIVE_ANTENNE",
+          "nol_p2": "p2,LIVE",
+          "nol_p13": "p13,n"
+        }
+      },
+      "ads": {
+        "smart": {
+          "url": "https://www14.smartadserver.com/ac?siteid=307555&pgid=1115590&fmtid=81409&ab=1&tgt=cat%3DCPO_ART%3Blang%3Dfr%3Bplatform%3DARTE_NEXT%3Bcontent%3DRC-014340%3Bcontent%3DRC-027956&oc=1&out=vast4&ps=1&pb=0&visit=S&vcn=s&ctid=120086-105-A&ctd=2729&lang=fr&ctt=broadcast&ssar=1&ctc=CPO_ART&ctk=RC-014340%2CRC-027956"
+        }
+      },
+      "restriction": {
+        "enablePreroll": false,
+        "geoblocking": {
+          "code": "DE_FR",
+          "restrictedArea": false,
+          "inclusion": [],
+          "exclusion": [],
+          "userGeoblockingZone": [
+            "DE_FR",
+            "EUR_DE_FR",
+            "EUR_UK",
+            "SAT",
+            "EUR_PLUS",
+            "ALL"
+          ],
+          "userCountryCode": "FR",
+          "userTimeZone": "+02:00"
+        },
+        "ageRestriction": "NONE",
+        "timeSlot": null,
+        "allowEmbed": true,
+        "enableMyArte": false
+      },
+      "stickers": [
+        {
+          "code": "LIVE",
+          "label": "EN DIRECT"
+        }
+      ],
+      "autoplay": true,
+      "warnings": [],
+      "error": null
+    }
+  }
+}

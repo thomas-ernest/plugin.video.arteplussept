@@ -1,0 +1,141 @@
+[
+  {
+    "label": "Recherche",
+    "path": "plugin://plugin.video.arteplussept/search"
+  },
+  {
+    "label": "[B][COLOR ffffa500]LIVE[/COLOR] - Invitation au voyage[/B] - Little Nemo à New York / Paris / Suisse",
+    "thumbnail": "https://api-cdn.arte.tv/img/v2/image/KGLevXqz4tJeXuurSeJc4G/940x530",
+    "is_playable": true,
+    "info_type": "video",
+    "info": {
+      "title": "Invitation au voyage",
+      "duration": 2729,
+      "plot": "Linda Lorin nous emmène à la découverte de notre patrimoine artistique, culturel et naturel. À New York, Little Nemo prend vie - Un air de Vietnam à Paris - Au Japon, les futomakis de Miki - En Suisse, les saucisses de la discorde.",
+      "playcount": "0",
+      "mpaa": "Unknown"
+    },
+    "properties": {
+      "fanart_image": "https://api-cdn.arte.tv/img/v2/image/KGLevXqz4tJeXuurSeJc4G/940x530"
+    },
+    "path": "plugin://plugin.video.arteplussept/play_live/https%3A%2F%2Fartesimulcast.akamaized.net%2Fhls%2Flive%2F2031003%2Fartelive_fr%2Findex.m3u8/Unknown",
+    "context_menu": [
+      [
+        "Lire du début",
+        "RunPlugin(plugin://plugin.video.arteplussept/play/SHOW/120086-105-A/Unknown/context_menu)"
+      ]
+    ]
+  },
+  {
+    "label": "En ce moment",
+    "path": "plugin://plugin.video.arteplussept/category/cached/73eb8207-aa74-417e-8aab-3c5d786379b6"
+  },
+  {
+    "label": "Les incontournables",
+    "path": "plugin://plugin.video.arteplussept/category/cached/b271a567-17e1-4e47-bb0c-4fea1fa96849"
+  },
+  {
+    "label": "Les nouveautés",
+    "path": "plugin://plugin.video.arteplussept/category/cached/a6f8c6d2-29d8-44e6-95f3-eec44d2fedaa_a6f8c6d2-29d8-44e6-95f3-eec44d2fedaa"
+  },
+  {
+    "label": "Mieux comprendre l'actualité",
+    "path": "plugin://plugin.video.arteplussept/category/cached/125e2c49-2eb6-427e-a08b-64eac774648d_125e2c49-2eb6-427e-a08b-64eac774648d"
+  },
+  {
+    "label": "Ma liste",
+    "path": "plugin://plugin.video.arteplussept/favorites",
+    "context_menu": [
+      [
+        "Purger mes favoris Arte",
+        "RunPlugin(plugin://plugin.video.arteplussept/purge_favorites)"
+      ]
+    ]
+  },
+  {
+    "label": "Reprendre la lecture",
+    "path": "plugin://plugin.video.arteplussept/last_viewed",
+    "context_menu": [
+      [
+        "Purger mon historique",
+        "RunPlugin(plugin://plugin.video.arteplussept/purge_last_viewed)"
+      ]
+    ]
+  },
+  {
+    "label": "Votre prochaine série vous attend",
+    "path": "plugin://plugin.video.arteplussept/category/cached/ede95ebb-511c-4c73-a7e5-6b098fbd5f00"
+  },
+  {
+    "label": "Nos films à l'affiche",
+    "path": "plugin://plugin.video.arteplussept/category/cached/9ee9b6f1-facc-4308-81ed-e43a9b4e6a15"
+  },
+  {
+    "label": "Les documentaires à ne pas manquer",
+    "path": "plugin://plugin.video.arteplussept/category/cached/839cd5ff-f37a-4cf5-8655-1815484c1eb2"
+  },
+  {
+    "label": "À voir en famille",
+    "path": "plugin://plugin.video.arteplussept/category/cached/ff47eaf5-8d62-440e-bcf5-1e4995e28e5b_ff47eaf5-8d62-440e-bcf5-1e4995e28e5b"
+  },
+  {
+    "label": "Un été disco et paillettes",
+    "path": "plugin://plugin.video.arteplussept/category/cached/3af3645f-fa6f-4ae1-8b50-b11436344ac6_3af3645f-fa6f-4ae1-8b50-b11436344ac6"
+  },
+  {
+    "label": "Bande-annonce (event teaser)",
+    "path": "plugin://plugin.video.arteplussept/category/cached/473315c2-d42e-4390-a0e9-40de041667be_473315c2-d42e-4390-a0e9-40de041667be"
+  },
+  {
+    "label": "Regards sur le monde",
+    "path": "plugin://plugin.video.arteplussept/category/cached/e3a85aa6-4de6-4d86-8baf-a1d24c251a68"
+  },
+  {
+    "label": "Les grands portraits",
+    "path": "plugin://plugin.video.arteplussept/category/cached/2c47bedd-8a11-4e9f-beb6-4570f9b70c14"
+  },
+  {
+    "label": "Concerts et spectacles ",
+    "path": "plugin://plugin.video.arteplussept/category/cached/c6a35349-8ca5-44ed-b64c-28e6fd46ebbc"
+  },
+  {
+    "label": "Festival",
+    "path": "plugin://plugin.video.arteplussept/category/cached/0d6168f4-ca88-48b9-afee-830844eed53d_0d6168f4-ca88-48b9-afee-830844eed53d"
+  },
+  {
+    "label": "Culture",
+    "path": "plugin://plugin.video.arteplussept/category/cached/7bedc138-66c2-4c4a-937d-29abe267e4ed"
+  },
+  {
+    "label": "Nos émissions en un coup d'œil",
+    "path": "plugin://plugin.video.arteplussept/category/cached/16c30819-05d3-454f-856e-e5508a6b41db"
+  },
+  {
+    "label": "Idées",
+    "path": "plugin://plugin.video.arteplussept/category/cached/7d6d1fec-45dc-4e12-8920-0e9f45d32de7"
+  },
+  {
+    "label": "Société",
+    "path": "plugin://plugin.video.arteplussept/category/cached/5633910d-a82f-42b7-9e10-08786fe2c077"
+  },
+  {
+    "label": "Histoire",
+    "path": "plugin://plugin.video.arteplussept/category/cached/220901ce-2ad0-4261-a8d4-cd8d288e288c"
+  },
+  {
+    "label": "Sciences et technologies",
+    "path": "plugin://plugin.video.arteplussept/category/cached/93729a04-5e43-4b73-9343-de45929dca2f"
+  },
+  {
+    "label": "La planète et nous",
+    "path": "plugin://plugin.video.arteplussept/category/cached/e7d522e6-c4d3-4bc8-9ffd-63528f39aabc"
+  },
+  {
+    "label": "Les primés",
+    "path": "plugin://plugin.video.arteplussept/category/cached/4040fdb2-cff1-4a22-9a90-a60bc1dfaced"
+  },
+  {
+    "label": "Les vidéos les plus vues",
+    "path": "plugin://plugin.video.arteplussept/category/cached/e9bc130c-747a-4e4c-95ba-9779586e6167"
+  }
+]
