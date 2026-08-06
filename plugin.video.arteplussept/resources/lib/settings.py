@@ -15,23 +15,23 @@ class Settings:
     def __init__(self, plugin):
         # Language used to query arte api
         # defaults to fr
-        self.language = plugin.get_setting(
-            'lang', choices=languages) or languages[0]
+        lang_idx = plugin.addon.getSettingInt('lang') or 0
+        self.language = languages[lang_idx]
         # Quality of the videos
         # defaults to High, SQ, 720p
-        self.quality = quality_map[plugin.get_setting(
-            'quality', choices=list(quality_map.keys()))] or quality_map['High']
+        quality_key_idx = plugin.addon.getSettingInt('quality') or 2
+        self.quality = quality_map[list(quality_map.keys())[quality_key_idx]]
         # Should the plugin display all available streams for videos?
         # defaults to False
-        self.show_video_streams = plugin.get_setting(
-            'show_video_streams', bool) or False
+        self.show_video_streams = plugin.addon.getSettingBool(
+            'show_video_streams') or False
         # Arte TV user name
         # defaults to empty string to return false with if not str
-        self.username = plugin.get_setting(
+        self.username = plugin.addon.getSetting(
             'user_email') or ""
         # Enable additional logs managed by plugin: API and display object traces
-        self.loglevel = plugin.get_setting(
-            'loglevel', choices=list(loglevel.keys())) or loglevel['DEFAULT']
+        loglevel_key_idx = plugin.addon.getSettingInt('loglevel') or 0
+        self.loglevel = loglevel[list(loglevel.keys())[loglevel_key_idx]]
 
     def should_log(self, log_type):
         """Return True when the configured loglevel includes the requested log type."""

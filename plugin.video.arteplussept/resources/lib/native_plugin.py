@@ -193,23 +193,6 @@ class StorageMixin:
     def _storage_file_path(self, key):
         return os.path.join(self._ensure_storage_dir(), f"{key}.json")
 
-    def set_setting(self, key, value):
-        """Set an addon setting via xbmcaddon API."""
-        try:
-            self.addon.setSetting(key, str(value) if value is not None else '')
-            return True
-        except Exception:
-            xbmc.log(f"Failed to set setting {key}", xbmc.LOGWARNING)
-            return False
-
-    def get_setting(self, key):
-        """Get an addon setting via xbmcaddon API."""
-        try:
-            return self.addon.getSetting(key)
-        except Exception:
-            xbmc.log(f"Failed to get setting {key}", xbmc.LOGWARNING)
-            return None
-
     def get_storage(self, key, ttl=None):
         """File-backed storage with TTL support (TTL in minutes)."""
         if key in self._storage:
