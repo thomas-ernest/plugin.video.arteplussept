@@ -264,7 +264,8 @@ def set_auth_user_settings(plugin, email):
     message = plugin.addon.getLocalizedString(30017).format(user=email)
     if email is None or len(email) <= 0:
         message = plugin.addon.getLocalizedString(30018)
-    return plugin.set_setting('user_email', email) and plugin.set_setting('login_acc', message)
+    return plugin.addon.setSetting('user_email', email) and \
+        plugin.addon.setSetting('login_acc', message)
 
 
 def get_cached_token(plugin, token_idx, silent=False):
@@ -274,7 +275,7 @@ def get_cached_token(plugin, token_idx, silent=False):
     about the need to authenticate.
     If user logged in and later changed the user email, it returns None.
     """
-    cached_token = plugin.get_storage(_STORAGE_KEY, TTL=_TTL)
+    cached_token = plugin.get_storage(_STORAGE_KEY, ttl=_TTL)
     if token_idx in cached_token and isinstance(cached_token[token_idx], dict):
         tokens = cached_token[token_idx]
     else:
@@ -302,4 +303,5 @@ def erase_password_in_old_config(plugin):
     to authenticate user.
     Deprecated since creation JUL2023, v1.3.0.
     """
-    return plugin.set_setting('password', '') and plugin.set_setting('username', '')
+    return plugin.addon.setSetting('password', '') and \
+        plugin.addon.setSetting('username', '')
