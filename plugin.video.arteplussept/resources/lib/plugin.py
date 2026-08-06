@@ -43,7 +43,7 @@ def display_index():
         addon.setSetting("last_info_version", current_version)
 
     lst_itms = view.build_home_page(
-        plugin, settings, plugin.get_storage('cached_categories', TTL=60))
+        plugin, settings, plugin.get_storage('cached_categories', ttl=60))
     logger.log_xbmc(lst_itms, 'index')
     return lst_itms
 
@@ -61,7 +61,7 @@ def display_cached_category(zone_id):
     """Display the menu for a category that is stored
     in cache from previous api call like home page"""
     lst_itms = view.get_cached_category(
-        zone_id, plugin.get_storage('cached_categories', TTL=60))
+        zone_id, plugin.get_storage('cached_categories', ttl=60))
     logger.log_xbmc(lst_itms, 'cached_category')
     return lst_itms
 
@@ -69,7 +69,7 @@ def display_cached_category(zone_id):
 @plugin.route('/category/page/<zone_id>/<page>/<page_id>', name='category_page')
 def display_category_page(zone_id, page, page_id):
     """Display the menu for a category that needs an api call"""
-    lst_itms = ArteZone(plugin, settings, plugin.get_storage('cached_categories', TTL=60)) \
+    lst_itms = ArteZone(plugin, settings, plugin.get_storage('cached_categories', ttl=60)) \
         .build_menu(zone_id, page, page_id)
     logger.log_xbmc(lst_itms, 'category_page')
     return lst_itms
