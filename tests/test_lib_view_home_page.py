@@ -1,131 +1,60 @@
-"""Contract test for the home page builder."""
-import json
-import sys
-import types
+"""
+Contract test for the home page builder.
+"""
 import urllib.parse
-from pathlib import Path
 from unittest.mock import Mock
-
+# pylint: disable=import-error
 import pytest
 
-# Fake xbmcswift2 imports used by resources.lib.view and mapper modules.
-fake_xbmc = types.SimpleNamespace(
-    LOGERROR=4,
-    LOGINFO=1,
-    log=lambda message, level=None: None,
-)
-fake_actions = types.SimpleNamespace(
-    background=lambda path: f"RunPlugin({path})",
-    update_view=lambda url: f"Container.Update({url})"
-)
-fake_plugin = types.SimpleNamespace(
-    name='plugin.video.arteplussept',
-    url_for=lambda route, **kwargs: f"plugin://plugin.video.arteplussept/{route}",
-    get_setting=lambda key, *args, **kwargs: {
-        'lang': 'fr',
-        'quality': 'High',
-        'show_video_streams': False,
-        'user_email': '',
-        'loglevel': 'DEFAULT'
-    }.get(key),
-    addon=types.SimpleNamespace(
-        getLocalizedString=lambda idx: {
-            30012: 'Recherche',
-            30060: 'Lire du début',
-            30040: 'Purger mes favoris Arte',
-            30030: 'Purger mon historique'
-        }.get(idx, str(idx)),
-        getAddonInfo=lambda key: '99.99.99'
-    )
-)
-fake_xbmcvfs = types.SimpleNamespace(
-    # pylint: disable=unnecessary-lambda, unspecified-encoding
-    File=lambda path, mode: open(path, mode),
-    exists=lambda path: True,
-    mkdir=lambda path: None,
-)
-fake_xbmcgui = types.SimpleNamespace(
-    # pylint: disable=unnecessary-lambda, unspecified-encoding
-    File=lambda path, mode: open(path, mode),
-    exists=lambda path: True,
-    mkdir=lambda path: None,
-)
+from tests.test_support import install_fake_kodi_modules, load_json
 
-fake_xbmcswift2 = types.ModuleType("xbmcswift2")
-fake_xbmcswift2.xbmc = fake_xbmc
-fake_xbmcswift2.actions = fake_actions
-fake_xbmcswift2.Plugin = fake_plugin
-fake_xbmcswift2.xbmcvfs = fake_xbmcvfs
-fake_xbmcswift2.xbmcgui = fake_xbmcgui
-sys.modules["xbmcswift2"] = fake_xbmcswift2
+install_fake_kodi_modules()
 
-# Register fake modules: xbmcmixin, listitem, and logger to avoid import errors during testing
-fake_xbmcmixin = types.ModuleType("xbmcmixin")
-fake_xbmcmixin.XBMCMixin = object
-sys.modules["xbmcmixin"] = fake_xbmcmixin
-sys.modules["xbmcswift2.xbmcmixin"] = fake_xbmcmixin
-
-fake_listitem = types.ModuleType("listitem")
-fake_listitem.ListItem = object
-sys.modules["listitem"] = fake_listitem
-
-fake_logger = types.ModuleType("logger")
-fake_logger.log = object
-fake_logger.setup_log = lambda p: None
-sys.modules["logger"] = fake_logger
-
-# Need to create mocks before importing
-# pylint: disable=no-name-in-module, import-error, wrong-import-position
+# Mocks are created before importing these files to avoid failures
+# pylint: disable=no-name-in-module, import-error, wrong-import-position, wrong-import-order
 from resources.lib import api  # noqa: E402
-# pylint: disable=no-name-in-module, import-error, wrong-import-position
+# pylint: disable=no-name-in-module, import-error, wrong-import-position, wrong-import-order
 from resources.lib import view  # noqa: E402
-# pylint: disable=no-name-in-module, import-error, wrong-import-position
+# pylint: disable=no-name-in-module, import-error, wrong-import-position, wrong-import-order
 from resources.lib.settings import Settings  # noqa: E402
-
-
-def load_json(name):
-    """Load a JSON fixture by name."""
-    base = Path(__file__).parent / "fixtures"
-    with (base / name).open("r", encoding="utf-8") as f:
-        return json.load(f)
 
 
 def plugin_url_for(route, **kwargs):
     """Simulate plugin URL generation for routes used by build_home_page."""
-    if route == 'init_search':
-        return 'plugin://plugin.video.arteplussept/search'
-    if route == 'play_live':
-        stream_url = urllib.parse.quote(str(kwargs['stream_url']), safe='')
-        mpaa = urllib.parse.quote(str(kwargs['mpaa']), safe='')
-        return f'plugin://plugin.video.arteplussept/play_live/{stream_url}/{mpaa}'
-    if route == 'play_from':
-        kind = urllib.parse.quote(str(kwargs['kind']), safe='')
-        program_id = urllib.parse.quote(str(kwargs['program_id']), safe='')
-        mpaa = urllib.parse.quote(str(kwargs['mpaa']), safe='')
-        play_from = urllib.parse.quote(str(kwargs['play_from']), safe='')
-        return f'plugin://plugin.video.arteplussept/play/{kind}/{program_id}/{mpaa}/{play_from}'
-    if route == 'cached_category':
-        zone_id = urllib.parse.quote(str(kwargs['zone_id']), safe='')
-        return f'plugin://plugin.video.arteplussept/category/cached/{zone_id}'
-    if route == 'api_category':
-        category_code = urllib.parse.quote(str(kwargs['category_code']), safe='')
-        return f'plugin://plugin.video.arteplussept/category/api/{category_code}'
-    if route == 'favorites_default':
-        return 'plugin://plugin.video.arteplussept/favorites'
-    if route == 'last_viewed_default':
-        return 'plugin://plugin.video.arteplussept/last_viewed'
-    if route == 'favorites':
-        page = urllib.parse.quote(str(kwargs.get('page', '1')), safe='')
-        return f'plugin://plugin.video.arteplussept/favorites/{page}'
-    if route == 'last_viewed':
-        page = urllib.parse.quote(str(kwargs.get('page', '1')), safe='')
-        return f'plugin://plugin.video.arteplussept/last_viewed/{page}'
-    if route == 'category_page':
-        zone_id = urllib.parse.quote(str(kwargs['zone_id']), safe='')
-        page = urllib.parse.quote(str(kwargs['page']), safe='')
-        page_id = urllib.parse.quote(str(kwargs['page_id']), safe='')
-        return f'plugin://plugin.video.arteplussept/category/page/{zone_id}/{page}/{page_id}'
-    return f"plugin://plugin.video.arteplussept/{route}"
+    base_url_by_route = {
+        'init_search': 'plugin://plugin.video.arteplussept/search',
+        'favorites_default': 'plugin://plugin.video.arteplussept/favorites',
+        'last_viewed_default': 'plugin://plugin.video.arteplussept/last_viewed',
+        'play_live': 'plugin://plugin.video.arteplussept/play_live',
+        'play_from': 'plugin://plugin.video.arteplussept/play',
+        'cached_category': 'plugin://plugin.video.arteplussept/category/cached',
+        'api_category': 'plugin://plugin.video.arteplussept/category/api',
+        'favorites': 'plugin://plugin.video.arteplussept/favorites',
+        'last_viewed': 'plugin://plugin.video.arteplussept/last_viewed',
+        'category_page': 'plugin://plugin.video.arteplussept/category/page',
+    }
+    url_params_by_route = {
+        'play_live': ('stream_url', 'mpaa'),
+        'play_from': ('kind', 'program_id', 'mpaa', 'play_from'),
+        'cached_category': ('zone_id',),
+        'api_category': ('category_code',),
+        'favorites': ('page',),
+        'last_viewed': ('page',),
+        'category_page': ('zone_id', 'page', 'page_id'),
+    }
+
+    url = ""
+    if route in base_url_by_route:
+        base_url = base_url_by_route[route]
+        if route in url_params_by_route:
+            params = [urllib.parse.quote(str(kwargs[param]), safe='')
+                      for param in url_params_by_route[route]]
+            url = '/'.join([base_url, *params])
+        else:
+            url = base_url
+    else:
+        url = f"plugin://plugin.video.arteplussept/{route}"
+    return url
 
 
 @pytest.fixture(name='plugin')
