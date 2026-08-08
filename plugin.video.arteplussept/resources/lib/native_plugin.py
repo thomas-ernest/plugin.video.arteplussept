@@ -101,6 +101,7 @@ class RoutingMixin:
 
     def run(self):
         """Dispatch to a registered route based on the 'route' query parameter."""
+        self.handle = int(sys.argv[1]) if len(sys.argv) > 1 else None
         params = {}
         if len(sys.argv) > 2 and sys.argv[2]:
             params = urllib.parse.parse_qs(sys.argv[2][1:])
