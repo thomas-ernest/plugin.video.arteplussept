@@ -149,9 +149,13 @@ def display_streams(program_id):
 def play_live(stream_url, mpaa):
     """Play live content."""
     utils.warn_if_age_restricted(plugin, mpaa)
-    lst_itm = {'path': stream_url}
-    logger.log_xbmc(lst_itm, 'play_live')
-    return plugin.set_resolved_url(lst_itm)
+    # build a proper list item with full info
+    # played_itm = {
+    #     'label': 'Live', 'path': stream_url
+    # }
+    # logger.log_xbmc(played_itm, 'play_live')
+    xbmc.Player().play(stream_url)
+    # return plugin.set_resolved_url(played_itm)
 
 # Cannot read video new arte tv program API. Blocked by FFMPEG issue #10149
 # @plugin.route('/play_artetv/<program_id>', name='play_artetv')
@@ -204,7 +208,7 @@ def play(kind, program_id, mpaa, play_from=PlayFrom.ITM, audio_slot='1'):
         played_item = view.build_stream_url(plugin, settings, kind, program_id, int(audio_slot))
         logger.log_xbmc(played_item, 'play')
         if play_from == PlayFrom.CTX.value:
-            result = plugin.play_video(played_item)
+            result = plugin.set_resolved_url(played_item)
         else:
             result = plugin.set_resolved_url(played_item)
     utils.warn_if_age_restricted(plugin, mpaa)
@@ -258,13 +262,13 @@ def display_search_page(zone_id, page, query):
 @plugin.route('/user/login', name='user_login')
 def user_login():
     """Login user with email already set in settings by creating and persisting a token."""
-    return plugin.finish(succeeded=user.login(plugin))
+    return user.login(plugin)
 
 
 @plugin.route('/user/logout', name='user_logout')
 def user_logout():
     """Discard token of user in settings."""
-    return plugin.finish(succeeded=user.logout(plugin, settings))
+    return user.logout(plugin, settings)
 
 
 # plugin bootstrap
