@@ -117,7 +117,7 @@ def build_sibling_playlist(plugin, settings, program_id):
         sibling_arte_items = api.collection_with_last_viewed(
             settings.language, user.get_cached_token(plugin, settings.username, True),
             parent_program.get('kind'), parent_program.get('programId'))
-        return mapper.map_collection_as_playlist(plugin, sibling_arte_items, program_id)
+        return mapper.map_collection_as_playlist(plugin, settings, sibling_arte_items, program_id)
     return None
 
 
@@ -126,29 +126,17 @@ def build_collection_playlist(plugin, settings, kind, collection_id):
     Return a pair with collection with collection_id
     and program id of the first element in the collection
     """
-    return mapper.map_collection_as_playlist(plugin, api.collection_with_last_viewed(
-        settings.language,
-        user.get_cached_token(plugin, settings.username, True),
-        kind, collection_id))
+    return mapper.map_collection_as_playlist(
+        plugin,
+        settings,
+        api.collection_with_last_viewed(
+            settings.language,
+            user.get_cached_token(plugin, settings.username, True),
+            kind, collection_id))
 
 
 def build_stream_url(plugin, settings, kind, program_id, audio_slot):
     """
-    Return URL to stream content.
-    If the content is not available, it tries to return a related trailer or teaser.
+    Return a playable menu item with metadata for the requested stream.
     """
-    # first try with content
-    program_stream = api.streams(kind, program_id, settings.language)
-    if program_stream:
-        return mapper.map_playable(
-            program_stream, settings.quality, audio_slot, mapper.match_hbbtv)
-    # second try to fallback clip. It allows to display a trailer,
-    # when a documentary is not available anymore like on arte tv website
-    clip_stream = api.streams('CLIP', program_id, settings.language)
-    if clip_stream:
-        return mapper.map_playable(
-            clip_stream, settings.quality, audio_slot, mapper.match_hbbtv)
-    # otherwise raise the error
-    msg = plugin.addon.getLocalizedString(30029)
-    plugin.notify(msg=msg.format(strm=program_id, ln=settings.language), image='error')
-    return None
+    return mapper.map_video_as_playable_item(plugin, settings, kind, program_id, audio_slot)

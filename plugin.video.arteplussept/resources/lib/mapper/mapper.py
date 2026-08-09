@@ -1,6 +1,7 @@
-"""Map JSON API outputs into playable content and meanus for Kodi"""
+"""Map JSON API outputs into playable content and menus for Kodi"""
 # pylint: disable=import-error
 import xbmc
+from resources.lib import api
 from resources.lib import hof
 from resources.lib import utils
 from resources.lib.mapper.arteitem import ArteVideoItem
@@ -10,7 +11,6 @@ from resources.lib.mapper.arteitem import ArteCollectionItem
 from resources.lib.mapper.artezone import ArteZone
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
-from resources.lib.utils import PlayFrom
 
 
 def map_category_item(plugin, item, category_code):
@@ -38,7 +38,7 @@ def map_generic_item(plugin, item, show_video_streams):
     return item
 
 
-def map_collection_as_playlist(plugin, arte_collection, req_start_program_id=None):
+def map_collection_as_playlist(plugin, settings, arte_collection, req_start_program_id=None):
     """
     Map a collection from arte API to a list of items ready to build a playlist.
     Playlist item will be in the same order as arte_collection, if start_program_id
@@ -49,10 +49,14 @@ def map_collection_as_playlist(plugin, arte_collection, req_start_program_id=Non
     items_before_start = []
     items_after_start = []
     before_start = True
+    if not arte_collection:
+        return {'collection': [], 'start_program_id': None}
+
     # assume arte_collection[0] will be mapped successfully with map_video_as_playlist_item
     start_program_id = arte_collection[0].get('programId')
     for arte_item in arte_collection or []:
-        xbmc_item = map_video_as_playlist_item(plugin, arte_item)
+        
+        xbmc_item = map_video_as_playlist_item(plugin, settings, arte_item)
         if xbmc_item is None:
             break
 
@@ -79,21 +83,64 @@ def map_collection_as_playlist(plugin, arte_collection, req_start_program_id=Non
     }
 
 
-def map_video_as_playlist_item(plugin, item):
+def map_video_as_playlist_item(plugin, settings, item, audio_slot='1'):
     """
-    Create a video menu item without recursiveness to fetch parent collection
-    from a json returned by Arte HBBTV or ArteTV API
+    Create a direct playable video playlist item from a json returned by Arte HBBTV or ArteTV API.
     """
     program_id = item.get('programId')
     kind = item.get('kind')
     if isinstance(kind, dict) and kind.get('code', False):
         kind = kind.get('code')
 
-    path = plugin.url_for(
-        'play_from', kind=kind, program_id=program_id,
-        mpaa="Unknown", play_from=PlayFrom.LST.value)
-    result = ArteVideoItem(plugin, item).build_item(path, True)
-    return result
+    return map_video_as_playable_item(plugin, settings, kind, program_id, audio_slot)
+
+
+def map_video_as_playable_item(plugin, settings, kind, program_id, audio_slot='1'):
+    """Build a full playable video menu item with metadata for a single program."""
+
+    xbmc.log(f"map_video_as_playable_item 1: kind={kind}, program_id={program_id}, audio_slot={audio_slot}", xbmc.LOGWARNING)
+    item = api.video(program_id, settings.language)
+    if item is None:
+        return None
+
+    if isinstance(kind, dict) and kind.get('code', False):
+        kind = kind.get('code')
+
+    xbmc.log(f"map_video_as_playable_item 2: kind={kind}, program_id={program_id}, audio_slot={audio_slot}", xbmc.LOGWARNING)
+    stream_item = build_stream_url(plugin, settings, kind, program_id, audio_slot)
+    
+    xbmc.log(f"map_video_as_playable_item 3: stream_item={stream_item}", xbmc.LOGWARNING)
+    if stream_item is None:
+        return None
+
+    return ArteVideoItem(plugin, item).build_item(stream_item.get('path'), True)
+
+def build_stream_url(plugin, settings, kind, program_id, audio_slot):
+    """
+    Return URL to stream content.
+    If the content is not available, it tries to return a related trailer or teaser.
+    """
+    # normalize audio_slot into an int
+    try:
+        audio_slot = int(audio_slot)
+    except ValueError:
+        xbmc.log(f"Invalid audio_slot value: {audio_slot}. Defaulting to 1.", xbmc.LOGWARNING)
+        audio_slot = 1
+    # first try with content
+    program_stream = api.streams(kind, program_id, settings.language)
+    if program_stream:
+        return map_playable(
+            program_stream, settings.quality, audio_slot, match_hbbtv)
+    # second try to fallback clip. It allows to display a trailer,
+    # when a documentary is not available anymore like on arte tv website
+    clip_stream = api.streams('CLIP', program_id, settings.language)
+    if clip_stream:
+        return map_playable(
+            clip_stream, settings.quality, audio_slot, match_hbbtv)
+    # otherwise raise the error
+    msg = plugin.addon.getLocalizedString(30029)
+    plugin.notify(msg=msg.format(strm=program_id, ln=settings.language), image='error')
+    return None
 
 
 def map_video_streams_as_menu(plugin, item):
@@ -131,14 +178,14 @@ def map_streams(plugin, item, streams, quality):
         filtered_streams, key=lambda s: s.get('audioSlot'))
 
     def map_stream(video_item, stream):
-        audio_slot = stream.get('audioSlot')
         audio_label = stream.get('audioLabel')
 
         video_item['label'] = audio_label
         video_item['is_playable'] = True
-        video_item['path'] = plugin.url_for(
-            'play_specific', kind=kind, program_id=program_id,
-            mpaa='Unknown', play_from=PlayFrom.ITM.value, audio_slot=str(audio_slot))
+        # video_item['path'] = plugin.url_for(
+        #     'play_specific', kind=kind, program_id=program_id,
+        #     mpaa='Unknown', play_from=PlayFrom.ITM.value, audio_slot=str(audio_slot))
+        video_item['path'] = stream.get('url')
 
         return video_item
 
