@@ -68,11 +68,11 @@ class ArteVideoItem(ArteItem):
                 'plot': item.get('shortDescription') or item.get('fullDescription'),
                 'plotoutline': item.get('teaserText'),
                 'mpaa': self._get_mpaa_age_rating(),
-                'aired': self._get_air_date()
+                'aired': self._get_air_date(),
+                'total_time': str(self._get_duration())
             },
             'properties': {
                 'fanart_image': self._get_image_url('1920x1080', False),
-                'TotalTime': str(self._get_duration()),
             },
             'context_menu': [
                 (self.plugin.addon.getLocalizedString(30023),
@@ -221,15 +221,14 @@ class ArteTvVideoItem(ArteVideoItem):
         progress = self.get_progress()
         duration = self._get_duration()
         if self.json_dict.get('lastviewed', False) and duration is not None:
+            resume_offset = self._get_time_offset()
             artetv_item = {
                 'info': {
                     'playcount': '1' if progress >= 0.95 else '0',
+                    'resume': resume_offset,
+                    'resume_total': duration,
                 },
                 'properties': {
-                    # ResumeTime and TotalTime deprecated.
-                    # Use InfoTagVideo.setResumePoint() instead.
-                    'ResumeTime': str(self._get_time_offset()),
-                    'TotalTime': str(self._get_duration()),
                     'StartPercent': str(float(self._get_time_offset()) * 100.0 / float(duration))
                 },
             }
