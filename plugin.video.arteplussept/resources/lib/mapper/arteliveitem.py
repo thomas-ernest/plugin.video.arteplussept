@@ -68,8 +68,7 @@ class ArteLiveItem(ArteTvVideoItem):
         live_stream_item = mapper.map_playable(
             attr.get('streams'), quality, audio_slot, mapper.match_artetv)
         if live_stream_item:
-            live_item['path'] = self.plugin.url_for(
-                'play_live', stream_url=live_stream_item.get('path'), mpaa=mpaa)
+            live_item['path'] = live_stream_item.get('path')
             live_item['context_menu'] = [(
                 self.plugin.addon.getLocalizedString(30060),
                 actions.background(self.plugin.url_for(
