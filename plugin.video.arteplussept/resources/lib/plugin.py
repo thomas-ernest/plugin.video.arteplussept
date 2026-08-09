@@ -222,6 +222,7 @@ def play(kind, program_id, mpaa, play_from=PlayFrom.ITM, audio_slot='1'):
     sibling_playlist = None
     if play_from == PlayFrom.LST.value:
         sibling_playlist = view.build_sibling_playlist(plugin, settings, program_id)
+    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
     played_item = None
     if sibling_playlist is not None and len(sibling_playlist['collection']) > 1:
         # Start playing with the first playlist item
@@ -279,13 +280,13 @@ def display_search_page(zone_id, page, query):
     return lst_itms
 
 
-@plugin.route('/user/login', name='user_login')
+@plugin.route('/user/login', name='/user/login')
 def user_login():
     """Login user with email already set in settings by creating and persisting a token."""
     return user.login(plugin)
 
 
-@plugin.route('/user/logout', name='user_logout')
+@plugin.route('/user/logout', name='/user/logout')
 def user_logout():
     """Discard token of user in settings."""
     return user.logout(plugin, settings)

@@ -29,7 +29,7 @@ class ArteSearch(ArteCollection):
         Do not display an empty, if search is aborted or search for empty string"""
         query = self._get_search_query()
         if not query:
-            self.plugin.end_of_directory(succeeded=False)
+            return
         res = api.init_search(self.settings.language, query)
         return self._build_menu(res.get('content'), 'search', zone_id=res.get('id'), query=query)
 

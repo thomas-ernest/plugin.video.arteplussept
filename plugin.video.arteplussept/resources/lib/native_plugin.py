@@ -43,6 +43,7 @@ class RoutingMixin:
         return decorator
 
     def url_for(self, route_name, **kwargs):
+        """Build a plugin URL for a registered route."""
         params = {'route': route_name}
         for key, value in kwargs.items():
             params[key] = value
@@ -62,6 +63,13 @@ class RoutingMixin:
                 tag.setDuration(int(duration))
             elif isinstance(duration, str) and duration.isdigit():
                 tag.setDuration(int(duration))
+            resume = info.get('resume')
+            resume_total = info.get('resume_total')
+            if isinstance(resume, (int, float)) and resume_total is not None:
+                tag.setResumePoint(int(resume), int(resume_total))
+            total_time = info.get('total_time')
+            if isinstance(total_time, (str, int, float)):
+                tag.setTotalTime(int(total_time))
             plot = info.get('plot')
             if plot:
                 tag.setPlot(plot)
@@ -85,25 +93,18 @@ class RoutingMixin:
             li.setArt({'thumb': thumb})
         properties = item.get('properties')
         if isinstance(properties, dict) and properties:
-            try:
-                li.setProperties(properties)
-            except Exception:
-                pass
+            li.setProperties(properties)
         info = item.get('info')
         if info:
             self._apply_video_info(li, info)
         path = item.get('path')
         if path:
-            try:
-                li.setPath(str(path))
-            except Exception:
-                pass
+            li.setPath(str(path))
         return li
 
     def map_collection_to_playlist(self, collection):
         """Add items (list of dict items with 'path') to the video playlist."""
         # Empty playlist, otherwise requested video is present twice in the playlist
-        xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
         pl = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
         for item in collection or []:
             path = item.get('path')
@@ -129,6 +130,7 @@ class RoutingMixin:
             return False
 
     def set_content(self, content):
+        """Set the content type for the current directory (e.g., 'movies', 'tvshows')."""
         if self.handle is not None and content:
             try:
                 xbmcplugin.setContent(self.handle, content)
@@ -139,44 +141,57 @@ class RoutingMixin:
         """Dispatch to a registered route based on the 'route' query parameter."""
         self.handle = int(sys.argv[1]) if len(sys.argv) > 1 else None
         params = {}
+        route = ''
+        # route is in sys.argv[2] when opening the plugin
         if len(sys.argv) > 2 and sys.argv[2]:
-            params = urllib.parse.parse_qs(sys.argv[2][1:])
-            params = {key: value[0] if isinstance(value, list) and len(value) > 0 else value
-                      for key, value in params.items()}
-        route = params.pop('route', None)
-        if route is None:
+            raw_route = sys.argv[2][1:]  # Remove leading '?'
+            params = urllib.parse.parse_qs(raw_route)
+            params = {
+                key: value[0] if isinstance(value, list) and len(value) > 0
+                else value for key, value in params.items()
+            }
+            route = params.pop('route', None)
+        # route is in sys.argv[0] from settings with runplugin:// (and sys.argv[2] is empty)
+        elif sys.argv[0]:
+            route = urllib.parse.urlparse(sys.argv[0]).path
+
+        if route == '/' or route is None:
             route = 'index'
+
         handler = self._routes.get(route)
         if handler is None:
             xbmc.log(f"No handler for route '{route}'", xbmc.LOGERROR)
             return
+
         try:
             result = handler(**params)
         except TypeError:
             result = handler()
-        if isinstance(result, list) and self.handle is not None:
-            for item in result:
+
+        if self.handle is not None:
+            if isinstance(result, list):
+                for item in result:
+                    try:
+                        path = item.get('path')
+                        is_playable = item.get('is_playable', False)
+                        li = self._listitemify(item)
+                        ctx = item.get('context_menu')
+                        if ctx:
+                            try:
+                                li.addContextMenuItems(ctx, replaceItems=False)
+                            except Exception:
+                                pass
+                        xbmcplugin.addDirectoryItem(
+                            handle=self.handle, url=path, listitem=li, isFolder=not is_playable)
+                    except Exception as exc:
+                        xbmc.log(f"Error rendering menu item: {exc}", xbmc.LOGWARNING)
                 try:
-                    path = item.get('path')
-                    is_playable = item.get('is_playable', False)
-                    li = self._listitemify(item)
-                    ctx = item.get('context_menu')
-                    if ctx:
-                        try:
-                            li.addContextMenuItems(ctx, replaceItems=False)
-                        except Exception:
-                            pass
-                    xbmcplugin.addDirectoryItem(
-                        handle=self.handle, url=path, listitem=li, isFolder=(not is_playable))
-                except Exception as exc:
-                    xbmc.log(f"Error rendering menu item: {exc}", xbmc.LOGWARNING)
-            try:
-                xbmcplugin.endOfDirectory(self.handle)
-            except Exception:
-                pass
-        elif isinstance(result, dict) and result.get('path') and result.get('is_playable'):
-            li = self._listitemify(result)
-            xbmcplugin.setResolvedUrl(self.handle, True, li)
+                    xbmcplugin.endOfDirectory(self.handle)
+                except Exception:
+                    pass
+            elif isinstance(result, dict) and result.get('path') and result.get('is_playable'):
+                li = self._listitemify(result)
+                xbmcplugin.setResolvedUrl(self.handle, True, li)
 
 
 class NotificationMixin:
@@ -187,6 +202,7 @@ class NotificationMixin:
         super().__init__(*args, **kwargs)
 
     def notify(self, msg, image=None, mtime=5000):
+        """Show a notification message in Kodi."""
         try:
             xbmcgui.Dialog().notification(self.addon.getAddonInfo('name'), msg, image, mtime)
         except Exception:
@@ -227,6 +243,7 @@ class StorageMixin:
         file_path = self._storage_file_path(key)
 
         class FileStorageDict(dict):
+            """Dictionary that automatically saves to a JSON file on changes."""
             def __init__(self, path, initial):
                 super().__init__(initial or {})
                 self._path = path

@@ -55,7 +55,7 @@ def map_collection_as_playlist(plugin, settings, arte_collection, req_start_prog
     # assume arte_collection[0] will be mapped successfully with map_video_as_playlist_item
     start_program_id = arte_collection[0].get('programId')
     for arte_item in arte_collection or []:
-        
+
         xbmc_item = map_video_as_playlist_item(plugin, settings, arte_item)
         if xbmc_item is None:
             break
@@ -98,7 +98,6 @@ def map_video_as_playlist_item(plugin, settings, item, audio_slot='1'):
 def map_video_as_playable_item(plugin, settings, kind, program_id, audio_slot='1'):
     """Build a full playable video menu item with metadata for a single program."""
 
-    xbmc.log(f"map_video_as_playable_item 1: kind={kind}, program_id={program_id}, audio_slot={audio_slot}", xbmc.LOGWARNING)
     item = api.video(program_id, settings.language)
     if item is None:
         return None
@@ -106,14 +105,13 @@ def map_video_as_playable_item(plugin, settings, kind, program_id, audio_slot='1
     if isinstance(kind, dict) and kind.get('code', False):
         kind = kind.get('code')
 
-    xbmc.log(f"map_video_as_playable_item 2: kind={kind}, program_id={program_id}, audio_slot={audio_slot}", xbmc.LOGWARNING)
     stream_item = build_stream_url(plugin, settings, kind, program_id, audio_slot)
-    
-    xbmc.log(f"map_video_as_playable_item 3: stream_item={stream_item}", xbmc.LOGWARNING)
+
     if stream_item is None:
         return None
 
     return ArteVideoItem(plugin, item).build_item(stream_item.get('path'), True)
+
 
 def build_stream_url(plugin, settings, kind, program_id, audio_slot):
     """
@@ -160,9 +158,6 @@ def map_video_as_item(plugin, item):
 
 def map_streams(plugin, item, streams, quality):
     """Map JSON item and list of audio streams into a menu."""
-    program_id = item.get('programId')
-    kind = item.get('kind')
-
     video_item = map_video_as_item(plugin, item)
 
     filtered_streams = None
