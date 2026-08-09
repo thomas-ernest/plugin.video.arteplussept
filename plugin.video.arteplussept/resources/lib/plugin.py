@@ -180,13 +180,8 @@ def display_streams(program_id):
 def play_live(stream_url, mpaa):
     """Play live content."""
     utils.warn_if_age_restricted(plugin, mpaa)
-    # build a proper list item with full info
-    # played_itm = {
-    #     'label': 'Live', 'path': stream_url
-    # }
-    # logger.log_xbmc(played_itm, 'play_live')
     xbmc.Player().play(stream_url)
-    # return plugin.set_resolved_url(played_itm)
+
 
 # Cannot read video new arte tv program API. Blocked by FFMPEG issue #10149
 # @plugin.route('/play_artetv/<program_id>', name='play_artetv')
@@ -229,24 +224,21 @@ def play(kind, program_id, mpaa, play_from=PlayFrom.ITM, audio_slot='1'):
         sibling_playlist = view.build_sibling_playlist(plugin, settings, program_id)
     played_item = None
     if sibling_playlist is not None and len(sibling_playlist['collection']) > 1:
-        # Empty playlist, otherwise requested video is present twice in the playlist
-        xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
         # Start playing with the first playlist item
-        played_item = plugin.add_to_playlist(sibling_playlist['collection'])[0]
+        played_item = plugin.map_collection_to_playlist(sibling_playlist['collection'])
         logger.log_xbmc(played_item, 'play')
-        result = plugin.set_resolved_url()
+        xbmc.Player().play(played_item)
     else:
         played_item = view.build_stream_url(plugin, settings, kind, program_id, int(audio_slot))
-        logger.log_xbmc(played_item, 'play')
-        if play_from == PlayFrom.CTX.value:
-            result = plugin.set_resolved_url(played_item)
+        if played_item is None:
+            xbmc.log('Could not resolve stream...', xbmc.LOGERROR)
         else:
-            result = plugin.set_resolved_url(played_item)
-    utils.warn_if_age_restricted(plugin, mpaa)
+            logger.log_xbmc(played_item, 'play')
+            plugin.play_video(played_item)
+        utils.warn_if_age_restricted(plugin, mpaa)
 
     synch_during_playback(synched_player)
     del synched_player
-    return result
 
 
 @plugin.route('/play_collection/<kind>/<collection_id>/<mpaa>', name='play_collection')
@@ -256,21 +248,18 @@ def play_collection(kind, collection_id, mpaa):
     """
     playlist = view.build_collection_playlist(plugin, settings, kind, collection_id)
 
-    # Empty playlist, otherwise requested video is present twice in the playlist
-    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
     # Start playing with the first playlist item
     synched_player = Player(
         user.get_cached_token(plugin, settings.username, True),
         playlist['start_program_id'])
     # try to seek parent collection, when out of the context of playlist creation
     # Start playing with the first playlist item
-    played_item = plugin.add_to_playlist(playlist['collection'])[0]
+    played_item = plugin.map_collection_to_playlist(playlist['collection'])
     logger.log_xbmc(played_item, 'play_collection')
-    result = plugin.set_resolved_url(played_item)
+    xbmc.Player().play(played_item)
     utils.warn_if_age_restricted(plugin, mpaa)
     synch_during_playback(synched_player)
     del synched_player
-    return result
 
 
 @plugin.route('/search', name='init_search')

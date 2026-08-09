@@ -3,7 +3,7 @@ This provides:
 - Plugin.route(path, name=...) decorator to register handlers
 - Plugin.run() to dispatch based on sys.argv
 - Plugin.url_for(route_name, **kwargs) to build plugin URLs
-- Minimal helpers: set_content, set_resolved_url, play_video, add_to_playlist, get_storage, finish
+- Minimal helpers: set_content, add_to_playlist=>map_collection_to_playlist, get_storage
 
 This is intentionally minimal and tailored to this addon
 to remove the xbmcswift2 routing dependency.
@@ -48,49 +48,85 @@ class RoutingMixin:
             params[key] = value
         return self.base_url + '?' + urllib.parse.urlencode(params)
 
-    def add_to_playlist(self, collection):
+    def _apply_video_info(self, li, info):
+        """Apply video metadata using InfoTagVideo instead of deprecated setInfo."""
+        if not info or not isinstance(info, dict):
+            return
+        try:
+            tag = li.getVideoInfoTag()
+            title = info.get('title')
+            if title:
+                tag.setTitle(title)
+            duration = info.get('duration')
+            if isinstance(duration, (int, float)):
+                tag.setDuration(int(duration))
+            elif isinstance(duration, str) and duration.isdigit():
+                tag.setDuration(int(duration))
+            plot = info.get('plot')
+            if plot:
+                tag.setPlot(plot)
+            plotoutline = info.get('plotoutline')
+            if plotoutline:
+                tag.setPlotOutline(plotoutline)
+            mpaa = info.get('mpaa')
+            if mpaa:
+                tag.setMpaa(mpaa)
+            aired = info.get('aired')
+            if aired:
+                tag.setFirstAired(aired)
+        except Exception:
+            pass
+
+    def _listitemify(self, item):
+        """Convert a dict-based item into an xbmcgui.ListItem."""
+        li = xbmcgui.ListItem(label=item.get('label', ''))
+        thumb = item.get('thumbnail') or (item.get('properties') or {}).get('fanart_image')
+        if thumb:
+            li.setArt({'thumb': thumb})
+        properties = item.get('properties')
+        if isinstance(properties, dict) and properties:
+            try:
+                li.setProperties(properties)
+            except Exception:
+                pass
+        info = item.get('info')
+        if info:
+            self._apply_video_info(li, info)
+        path = item.get('path')
+        if path:
+            try:
+                li.setPath(str(path))
+            except Exception:
+                pass
+        return li
+
+    def map_collection_to_playlist(self, collection):
         """Add items (list of dict items with 'path') to the video playlist."""
+        # Empty playlist, otherwise requested video is present twice in the playlist
+        xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
         pl = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-        results = []
         for item in collection or []:
             path = item.get('path')
-            li = xbmcgui.ListItem(label=item.get('label', ''))
-            thumb = item.get('thumbnail') or (item.get('properties') or {}).get('fanart_image')
-            if thumb:
-                li.setArt({'thumb': thumb})
-            info = item.get('info')
-            if info:
-                try:
-                    li.setInfo('video', info)
-                except Exception:
-                    pass
+            li = self._listitemify(item)
             try:
                 pl.add(path, li)
-                results.append(li)
             except Exception:
                 xbmc.log(f"Could not add to playlist: {path}", xbmc.LOGWARNING)
-        return results
+        return pl
 
-    def set_resolved_url(self, listitem=None):
-        if self.handle is None:
+    def play_video(self, item):
+        """Play a dictionary-based playable item with metadata."""
+        if not isinstance(item, dict):
             return False
-        if listitem is None:
-            xbmcplugin.setResolvedUrl(self.handle, True, xbmcgui.ListItem())
-        else:
-            if isinstance(listitem, dict):
-                li = xbmcgui.ListItem(label=listitem.get('label', ''))
-                xbmcplugin.setResolvedUrl(self.handle, True, li)
-            else:
-                xbmcplugin.setResolvedUrl(self.handle, True, listitem)
-        return True
-
-    def play_video(self, listitem):
-        return self.set_resolved_url(listitem)
-
-    def finish(self, *args, **kwargs):
-        if len(args) == 1 and not kwargs:
-            return args[0]
-        return None
+        path = item.get('path')
+        if not path:
+            return False
+        li = self._listitemify(item)
+        try:
+            xbmc.Player().play(str(path), li)
+            return True
+        except Exception:
+            return False
 
     def set_content(self, content):
         if self.handle is not None and content:
@@ -121,20 +157,9 @@ class RoutingMixin:
         if isinstance(result, list) and self.handle is not None:
             for item in result:
                 try:
-                    label = item.get('label')
                     path = item.get('path')
                     is_playable = item.get('is_playable', False)
-                    li = xbmcgui.ListItem(label)
-                    thumb = item.get('thumbnail') or \
-                        (item.get('properties') or {}).get('fanart_image')
-                    if thumb:
-                        li.setArt({'thumb': thumb})
-                    info = item.get('info')
-                    if info:
-                        try:
-                            li.setInfo('video', info)
-                        except Exception:
-                            pass
+                    li = self._listitemify(item)
                     ctx = item.get('context_menu')
                     if ctx:
                         try:
@@ -150,7 +175,7 @@ class RoutingMixin:
             except Exception:
                 pass
         elif isinstance(result, dict) and result.get('path') and result.get('is_playable'):
-            li = xbmcgui.ListItem(label=result.get('label', ''))
+            li = self._listitemify(result)
             xbmcplugin.setResolvedUrl(self.handle, True, li)
 
 
