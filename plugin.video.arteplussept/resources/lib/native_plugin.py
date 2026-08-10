@@ -31,6 +31,7 @@ class RoutingMixin:
         except Exception:
             self.handle = None
         self._routes = {}
+        self._url_paths = {}
         super().__init__(*args, **kwargs)
 
     def route(self, path, name=None):
@@ -38,16 +39,22 @@ class RoutingMixin:
         def decorator(func):
             route_name = name or func.__name__
             self._routes[route_name] = func
+            self._url_paths[route_name] = path
             return func
 
         return decorator
 
     def url_for(self, route_name, **kwargs):
         """Build a plugin URL for a registered route."""
+        xbmc.log(f"Building URL for route '{route_name}' with params: {kwargs}", xbmc.LOGWARNING)
+        xbmc.log(f"Registered routes: {self._routes.keys()}", xbmc.LOGWARNING)
         params = {'route': route_name}
         for key, value in kwargs.items():
             params[key] = value
-        return self.base_url + '?' + urllib.parse.urlencode(params)
+        # return (self.base_url + 
+        #         '/' + self._url_paths.get(route_name, '') +
+        #         '?' + urllib.parse.urlencode(params))
+        return self.base_url + self._url_paths.get(route_name, '') + '?' + urllib.parse.urlencode(params)
 
     def _apply_video_info(self, li, info):
         """Apply video metadata using InfoTagVideo instead of deprecated setInfo."""
