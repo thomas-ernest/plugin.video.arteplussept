@@ -191,7 +191,7 @@ class ArteTvVideoItem(ArteVideoItem):
                     self.plugin.addon.getLocalizedString(30011),
                     actions.update_view(
                         self.plugin.url_for(
-                            'collection', program_id=program_id, kind=kind)))]
+                            'collection', kind=kind, program_id=program_id)))]
             else:
                 # content_type = Content.MENU_ITEM
                 path = self.plugin.url_for('collection', kind=kind, program_id=program_id)
