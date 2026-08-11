@@ -8,6 +8,7 @@ import datetime
 import dateutil.parser
 # pylint: disable=import-error
 import xbmc
+import xbmcgui
 from resources.lib import actions
 from resources.lib import utils
 
@@ -51,41 +52,43 @@ class ArteVideoItem(ArteItem):
 
     def _build_item(self, path, is_playable):
         """
-        Build ListItem common to HBB TV and Arte TV API.
+        Build a native xbmcgui.ListItem for HBB TV and Arte TV API common data.
         """
         item = self.json_dict
         program_id = item.get('programId')
         label = self.format_title_and_subtitle()
-        return {
-            'label': label,
-            'path': path,
-            'thumbnail': self._get_image_url('480x270', True),
-            'is_playable': is_playable,
-            'info_type': 'video',
-            'info': {
-                'title': item.get('title'),
-                'duration': self._get_duration(),
-                'plot': item.get('shortDescription') or item.get('fullDescription'),
-                'plotoutline': item.get('teaserText'),
-                'mpaa': self._get_mpaa_age_rating(),
-                'aired': self._get_air_date(),
-                'total_time': str(self._get_duration())
-            },
-            'properties': {
-                'fanart_image': self._get_image_url('1920x1080', False),
-            },
-            'context_menu': [
-                (self.plugin.addon.getLocalizedString(30023),
-                    actions.background(self.plugin.url_for(
-                        'add_favorite', program_id=program_id, label=label))),
-                (self.plugin.addon.getLocalizedString(30024),
-                    actions.background(self.plugin.url_for(
-                        'remove_favorite', program_id=program_id, label=label))),
-                (self.plugin.addon.getLocalizedString(30035),
-                    actions.background(self.plugin.url_for(
-                        'mark_as_watched', program_id=program_id, label=label))),
-            ],
-        }
+        li = xbmcgui.ListItem(label=label)
+        if path:
+            li.setPath(str(path))
+        if hasattr(li, 'setProperty'):
+            li.setProperty('is_playable', str(bool(is_playable)))
+        li.setArt({
+            'thumb': self._get_image_url('480x270', True),
+            'fanart': self._get_image_url('1920x1080', False)
+        })
+
+        tag = li.getVideoInfoTag()
+        tag.setTitle(self.json_dict.get('title'))
+        tag.setPlot(self.json_dict.get('shortDescription') or self.json_dict.get('fullDescription'))
+        tag.setPlotOutline(self.json_dict.get('teaserText'))
+        tag.setMpaa(self._get_mpaa_age_rating())
+        tag.setFirstAired(self._get_air_date())
+        duration = self._get_duration()
+        if duration is not None:
+            tag.setDuration(duration)
+
+        li.addContextMenuItems([
+            (self.plugin.addon.getLocalizedString(30023),
+                actions.background(self.plugin.url_for(
+                    'add_favorite', program_id=program_id, label=label))),
+            (self.plugin.addon.getLocalizedString(30024),
+                actions.background(self.plugin.url_for(
+                    'remove_favorite', program_id=program_id, label=label))),
+            (self.plugin.addon.getLocalizedString(30035),
+                actions.background(self.plugin.url_for(
+                    'mark_as_watched', program_id=program_id, label=label))),
+        ], replaceItems=False)
+        return li
 
     def _get_duration(self):
         """
@@ -121,13 +124,14 @@ class ArteVideoItem(ArteItem):
         Abstract method to be implemented in child classes.
         Return date when item was showed to public for the first time.
         """
-        return None
+        raise NotImplementedError("Subclasses must implement _get_air_date")
 
     def _get_image_url(self, wished_res, wished_text):
         """
         Abstract method to be implemented in child classes.
         Return url to image to display for the current item.
         """
+        raise NotImplementedError("Subclasses must implement _get_image_url")
 
     def is_playlist(self):
         """Return True if program_id is a str starting with PL- or RC-."""
@@ -204,39 +208,30 @@ class ArteTvVideoItem(ArteVideoItem):
             is_playable = True
 
         xbmc_item = self.build_item(path, is_playable)
-        if xbmc_item is not None:
-            xbmc_item['context_menu'].extend(additional_context_menu)
+        if xbmc_item is not None and additional_context_menu:
+            xbmc_item.addContextMenuItems(additional_context_menu, replaceItems=False)
         return xbmc_item
 
     def build_item(self, path, is_playable):
         """
         Return video menu item to show content from Arte TV API.
         Generic method that take variables mapping in inputs.
-        :rtype dict[str, Any] | None: To be used in
-        https://romanvm.github.io/Kodistubs/_autosummary/xbmcgui.html#xbmcgui.ListItem.setInfo
         """
-        basic_item = super()._build_item(path, is_playable)
-        if basic_item is None:
+        li = super()._build_item(path, is_playable)
+        if li is None:
             return None
         progress = self.get_progress()
         duration = self._get_duration()
+
+        tag = li.getVideoInfoTag()
         if self.json_dict.get('lastviewed', False) and duration is not None:
             resume_offset = self._get_time_offset()
-            artetv_item = {
-                'info': {
-                    'playcount': '1' if progress >= 0.95 else '0',
-                    'resume': resume_offset,
-                    'resume_total': duration,
-                },
-                'properties': {
-                    'StartPercent': str(float(self._get_time_offset()) * 100.0 / float(duration))
-                },
-            }
-            basic_item['info'] = {**basic_item['info'], **artetv_item['info']}
-            basic_item['properties'] = {**basic_item['properties'], **artetv_item['properties']}
+            tag.setResumePoint(resume_offset, duration)
+            tag.setPlaycount(1 if progress >= 0.95 else 0)
+            li.setProperty('StartPercent', str(float(resume_offset) * 100.0 / float(duration)))
+            li.setProperty('StartOffset', str(resume_offset))
 
-        basic_item['properties']['fanart_image'] = self._get_image_url('1920x1080', False)
-        return basic_item
+        return li
 
     def _get_mpaa_age_rating(self):
         return utils.mpaa_from_age(self.json_dict.get('ageRating', None))
@@ -250,13 +245,16 @@ class ArteTvVideoItem(ArteVideoItem):
     def _parse_date_artetv(self, datestr):
         """Try to parse ``datestr`` into a ``datetime`` object like 2022-07-01T03:00:00Z.
         Return ``None`` if parsing fails.
+        Return a string in W3C format (YYYY-MM-DD).
         Similar to ``parse_date_hbbtv``"""
         date = None
         try:
-            date = datetime.datetime.strptime(datestr, '%Y-%m-%dT%H:%M:%S%z')
+            date_obj = datetime.datetime.strptime(datestr, '%Y-%m-%dT%H:%M:%S%z')
+            date = date_obj.strftime("%Y-%m-%d")
         except TypeError:
             date = None
         return date
+
 
     def _get_image_url(self, wished_res, wished_text):
         item = self.json_dict
@@ -315,25 +313,54 @@ class ArteHbbTvVideoItem(ArteVideoItem):
     """
 
     def build_item(self, path, is_playable):
-        basic_item = super()._build_item(path, is_playable)
-        if basic_item is None:
+        li = super()._build_item(path, is_playable)
+        if li is None:
             return None
         item = self.json_dict
-        hbbtv_item = {
-            'info': {
-                'genre': item.get('genrePresse'),
-                'plot': item.get('shortDescription') or item.get('fullDescription'),
-                'plotoutline': item.get('teaserText'),
-                # year is not correctly used by kodi :(
-                # the aired year will be used by kodi for production year :(
-                # 'year': int(config.get('productionYear')),
-                'country': [country.get('label') for country in
-                            item.get('productionCountries', [])],
-                'director': item.get('director'),
-            },
-        }
-        basic_item['info'] = {**basic_item['info'], **hbbtv_item['info']}
-        return basic_item
+        tag = li.getVideoInfoTag()
+        tag.setGenres([item.get('genrePresse')])
+        year = self._get_year()
+        if isinstance(year, int):
+            tag.setYear(year)
+        tag.setCountries([country.get('label') for country in item.get('productionCountries', [])])
+        directors = self._get_directors()
+        if directors:
+            tag.setDirectors(directors)
+        authors = self._get_authors()
+        if authors:
+            tag.setWriters(authors)
+        return li
+
+    def _get_year(self):
+        year = self.json_dict.get('productionYear')
+        if isinstance(year, int):
+            return year
+        if isinstance(year, str) and year.strip().isdigit():
+            return int(year)
+        return None
+
+    def _get_directors(self):
+        item = self.json_dict
+        directors = set()
+        main_director = item.get('director')
+        if isinstance(main_director, str) and main_director.strip():
+            directors.add(main_director)
+        for member in item.get('crew', []):
+            if member.get('activityCode') == 'REA':
+                member_name = member.get('label')
+                if isinstance(member_name, str) and member_name.strip():
+                    directors.add(member_name)
+        return list(directors)
+
+    def _get_authors(self):
+        item = self.json_dict
+        authors = set()
+        for member in item.get('crew', []):
+            if member.get('activityCode') == 'AUT':
+                member_name = member.get('label')
+                if isinstance(member_name, str) and member_name.strip():
+                    authors.add(member_name)
+        return list(authors)
 
     def _get_air_date(self):
         airdate = self.json_dict.get('broadcastBegin')
@@ -343,10 +370,12 @@ class ArteHbbTvVideoItem(ArteVideoItem):
 
     def _parse_date_hbbtv(self, datestr):
         """Try to parse ``datestr`` into a ``datetime`` object. Return ``None`` if parsing fails.
+        Return a string in W3C format (YYYY-MM-DD)
         Similar to parse_date_artetv."""
         date = None
         try:
-            date = dateutil.parser.parse(datestr)
+            date_obj = dateutil.parser.parse(datestr)
+            date = date_obj.strftime("%Y-%m-%d")
         except dateutil.parser.ParserError as error:
             xbmc.log(
                 f"[plugin.video.arteplussept] Problem with parsing date: {error}",
@@ -373,13 +402,11 @@ class ArteCollectionItem(ArteItem):
         item = self.json_dict
         program_id = item.get('programId')
         kind = item.get('kind')
-
-        return {
-            'label': self.format_title_and_subtitle(),
-            'path': self.plugin.url_for('collection', kind=kind, collection_id=program_id),
-            'thumbnail': item.get('imageUrl'),
-            'info': {
-                'title': item.get('title'),
-                'plotoutline': item.get('teaserText')
-            }
-        }
+        label = self.format_title_and_subtitle()
+        li = xbmcgui.ListItem(label=label)
+        li.setPath(self.plugin.url_for('collection', kind=kind, collection_id=program_id))
+        li.setProperty('is_playable', 'False')
+        tag = li.getVideoInfoTag()
+        tag.setTitle(item.get('title'))
+        tag.setPlotOutline(item.get('teaserText'))
+        return li

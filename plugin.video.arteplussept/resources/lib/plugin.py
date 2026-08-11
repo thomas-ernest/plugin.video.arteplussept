@@ -1,5 +1,6 @@
 """Main module for Kodi add-on plugin.video.arteplussept"""
 
+import traceback
 import xbmcaddon
 import xbmcgui
 # pylint: disable=import-error
@@ -196,12 +197,18 @@ def play(kind, program_id, mpaa, play_from=PlayFrom.ITM, audio_slot='1'):
         logger.log_xbmc(played_item, 'play')
         xbmc.Player().play(played_item)
     else:
-        played_item = view.build_stream_url(plugin, settings, kind, program_id, int(audio_slot))
-        if played_item is None:
-            xbmc.log('Could not resolve stream...', xbmc.LOGERROR)
-        else:
+        played_item = None
+        try:
+            played_item = view.build_stream_url(plugin, settings, kind, program_id, int(audio_slot))
+        except Exception as exp:
+            xbmc.log(f"Exception during stream resolution {traceback.format_tb(exp.__traceback__)}", xbmc.LOGERROR)
+        if played_item is not None:
             logger.log_xbmc(played_item, 'play')
             plugin.play_video(played_item)
+        else:
+            xbmc.log("Could not resolve stream...", xbmc.LOGERROR)
+            addon = xbmcaddon.Addon()
+            plugin.notify(addon.getLocalizedString(30029).format(strm=program_id, ln=audio_slot))
         utils.warn_if_age_restricted(plugin, mpaa)
 
     synch_during_playback(synched_player)

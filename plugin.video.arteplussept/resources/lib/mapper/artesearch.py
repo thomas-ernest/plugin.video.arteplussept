@@ -4,6 +4,7 @@ Module for Arte Search
 
 # pylint: disable=import-error
 import xbmc
+import xbmcgui
 from resources.lib import api
 from resources.lib.mapper.artecollection import ArteCollection
 
@@ -19,17 +20,17 @@ class ArteSearch(ArteCollection):
         """
         Return menu entry to search content.
         """
-        return {
-            'label': self.plugin.addon.getLocalizedString(30012),
-            'path': self.plugin.url_for('init_search')
-        }
+        li = xbmcgui.ListItem(label=self.plugin.addon.getLocalizedString(30012))
+        li.setPath(self.plugin.url_for('init_search'))
+        li.setProperty('is_playable', 'False')
+        return li
 
     def init_search(self):
         """Display keyboard to search for content. Then, display the menu of search results.
         Do not display an empty, if search is aborted or search for empty string"""
         query = self._get_search_query()
         if not query:
-            return
+            return None
         res = api.init_search(self.settings.language, query)
         return self._build_menu(res.get('content'), 'search', zone_id=res.get('id'), query=query)
 
