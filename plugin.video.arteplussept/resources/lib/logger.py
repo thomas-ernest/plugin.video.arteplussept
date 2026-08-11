@@ -3,8 +3,10 @@
 from os.path import join as OSPJoin
 from datetime import datetime
 import json
+import xbmcgui
 import xbmcvfs
 
+from resources.lib import utils
 from resources.lib.native_plugin import Plugin
 from . import settings
 
@@ -61,6 +63,8 @@ def to_jsonable(payload):
         return [to_jsonable(item) for item in payload]
     if isinstance(payload, dict):
         return {str(key): to_jsonable(value) for key, value in payload.items()}
+    if isinstance(payload, xbmcgui.ListItem):
+        return utils.getDictFromListItem(payload)
     if isinstance(payload, bytes):
         return payload.decode('utf-8', 'replace')
 

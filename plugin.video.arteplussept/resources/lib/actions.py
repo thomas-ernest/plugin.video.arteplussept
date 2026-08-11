@@ -1,5 +1,5 @@
 """
-This module contains actions 
+This module contains actions
  - to run tasks in the background of user navigation or
  - to update the current view in Kodi from a context menu for instance
 """

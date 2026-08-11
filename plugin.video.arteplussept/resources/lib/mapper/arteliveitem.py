@@ -4,6 +4,7 @@ for map_playable and match_hbbtv
 """
 
 import html
+import xbmcgui
 from resources.lib import actions
 from resources.lib import utils
 from resources.lib.utils import PlayFrom
@@ -46,43 +47,42 @@ class ArteLiveItem(ArteTvVideoItem):
             thumbnail_url = fanart_url
         mpaa = self._get_mpaa_age_restriction()
 
-        live_item = {
-            'label': self.format_title_and_subtitle(),
-            'thumbnail': thumbnail_url,
-            'is_playable': True,
-            'info_type': 'video',
-            'info': {
-                'title': meta.get('title'),
-                'duration': duration,
-                'plot': meta.get('description'),
-                'playcount': '0',
-                'mpaa': self._get_mpaa_age_restriction(),
-            },
-            'properties': {
-                'fanart_image': fanart_url,
-            }
-        }
+        live_item = xbmcgui.ListItem(label=self.format_title_and_subtitle())
+        live_item.setArt({'thumb': thumbnail_url, 'fanart': fanart_url})
+        tag = live_item.getVideoInfoTag()
+        tag.setTitle(meta.get('title'))
+        tag.setPlot(self.json_dict.get('shortDescription') or self.json_dict.get('fullDescription'))
+        tag.setPlotOutline(self.json_dict.get('teaserText'))
+        tag.setCountries([country.get('label') for country in item.get('productionCountries', [])])
+        tag.setDirectors([item.get('director')])
+        tag.setMpaa(self._get_mpaa_age_rating())
+        tag.setFirstAired(self._get_air_date())
+        duration = self._get_duration()
+        if duration:
+            tag.setDuration(duration)
+        live_item.setProperty('is_playable', 'True')
 
         # playing the stream from program id makes the live starts from the beginning
         # while it starts the video like the live tv, with the above
         live_stream_item = mapper.map_playable(
             attr.get('streams'), quality, audio_slot, mapper.match_artetv)
-        if live_stream_item:
-            live_item['path'] = live_stream_item.get('path')
-            live_item['context_menu'] = [(
+        if isinstance(live_stream_item, dict) and isinstance(live_stream_item.get('path'), str):
+            live_item.setPath(live_stream_item.get('path'))
+            live_item.addContextMenuItems([(
                 self.plugin.addon.getLocalizedString(30060),
                 actions.background(self.plugin.url_for(
                     'play_from', kind='SHOW', program_id=meta.get('providerId'), mpaa=mpaa,
                     play_from=PlayFrom.CTX.value))
-            )]
+            )])
         else:
-            live_item['path'] = self.plugin.url_for(
+            live_item.setPath(self.plugin.url_for(
                 'play_from', kind='SHOW', program_id=meta.get('providerId'), mpaa=mpaa,
                 play_from=PlayFrom.ITM.value)
+            )
 
         return live_item
 
     def _get_mpaa_age_restriction(self):
         item = self.json_dict
-        age_restriction = item.get('attributes').get('restriction').get('ageRestriction', None)
+        age_restriction = item.get('attributes').get('restriction').get('ageRestriction', 'Unknown')
         return utils.mpaa_from_age(age_restriction)

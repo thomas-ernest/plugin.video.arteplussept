@@ -1,6 +1,7 @@
 """Map JSON API outputs into playable content and menus for Kodi"""
 # pylint: disable=import-error
 import xbmc
+import xbmcgui
 from resources.lib import api
 from resources.lib import hof
 from resources.lib import utils
@@ -21,10 +22,10 @@ def map_category_item(plugin, item, category_code):
         category_code=category_code,
         sub_category_title=utils.encode_string(title))
 
-    return {
-        'label': title,
-        'path': path
-    }
+    li = xbmcgui.ListItem(label=title)
+    li.setPath(path)
+    li.setProperty('is_playable', 'False')
+    return li
 
 
 def map_generic_item(plugin, item, show_video_streams):
@@ -173,18 +174,15 @@ def map_streams(plugin, item, streams, quality):
         filtered_streams, key=lambda s: s.get('audioSlot'))
 
     def map_stream(video_item, stream):
-        audio_label = stream.get('audioLabel')
-
-        video_item['label'] = audio_label
-        video_item['is_playable'] = True
-        # video_item['path'] = plugin.url_for(
-        #     'play_specific', kind=kind, program_id=program_id,
-        #     mpaa='Unknown', play_from=PlayFrom.ITM.value, audio_slot=str(audio_slot))
-        video_item['path'] = stream.get('url')
+        if not isinstance(video_item, xbmcgui.ListItem):
+            raise RuntimeError('video_item must be an instance of xbmcgui.ListItem')
+        video_item.setLabel(stream.get('audioLabel'))
+        video_item.setProperty('is_playable', 'True')
+        video_item.setPath(stream.get('url'))
 
         return video_item
 
-    return [map_stream(dict(video_item), stream) for stream in sorted_filtered_streams]
+    return [map_stream(video_item, stream) for stream in sorted_filtered_streams]
 
 
 def map_zone_to_item(plugin, settings, zone, cached_categories):
@@ -224,10 +222,10 @@ def map_api_categories_item(plugin, item):
     """Return a menu entry to access content of category item.
     :param dict item: JSON node item
     """
-    return {
-        'label': item.get('title'),
-        'path': plugin.url_for('api_category', category_code=item.get('link').get('page'))
-    }
+    li = xbmcgui.ListItem(label=item.get('title'))
+    li.setPath(plugin.url_for('api_category', category_code=item.get('link').get('page')))
+    li.setProperty('is_playable', 'False')
+    return li
 
 
 def map_playable(streams, quality, audio_slot, match):
