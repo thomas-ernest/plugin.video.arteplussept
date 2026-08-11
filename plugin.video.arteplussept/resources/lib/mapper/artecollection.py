@@ -1,7 +1,7 @@
 """
 Arte Collection is a set of videos or collections like in favorites or history.
 """
-
+import xbmcgui
 from resources.lib import actions
 from resources.lib.mapper.arteitem import ArteTvVideoItem
 
@@ -39,16 +39,16 @@ class ArteCollection:
             current_page = meta.get('page')
             if current_page > 1:
                 # add previous page at the begining
-                items.insert(0, {
-                    'label': self.plugin.addon.getLocalizedString(30039),
-                    'path': self.plugin.url_for(collection_type, page=current_page-1, **nav_arg),
-                })
+                li = xbmcgui.ListItem(label=self.plugin.addon.getLocalizedString(30039))
+                li.setPath(self.plugin.url_for(collection_type, page=current_page-1, **nav_arg))
+                li.setProperty('is_playable', 'False')
+                items.insert(0, li)
             if current_page < total_pages:
                 # add next page at the end
-                items.append({
-                    'label': self.plugin.addon.getLocalizedString(30038),
-                    'path': self.plugin.url_for(collection_type, page=current_page+1, **nav_arg),
-                })
+                li = xbmcgui.ListItem(label=self.plugin.addon.getLocalizedString(30038))
+                li.setPath(self.plugin.url_for(collection_type, page=current_page+1, **nav_arg))
+                li.setProperty('is_playable', 'False')
+                items.append(li)
         return items
 
     def _get_page_meta(self, json_dict):
@@ -60,14 +60,15 @@ class ArteCollection:
 
     def _build_item(self, collection_type, item_label, purge_label_id):
         """
-        Return menu entry to access collection content
+        Return native xbmcgui.ListItem to access collection content
         with an additional command to flush collection content
         """
-        return {
-            'label': item_label,
-            'path': self.plugin.url_for(collection_type + '_default'),
-            'context_menu': [(
-                self.plugin.addon.getLocalizedString(purge_label_id),
-                actions.background(self.plugin.url_for('purge_' + collection_type))
-            )]
-        }
+        li = xbmcgui.ListItem(label=item_label)
+        path = self.plugin.url_for(collection_type + '_default')
+        li.setPath(path)
+        li.setProperty('is_playable', 'False')
+        li.addContextMenuItems([
+            (self.plugin.addon.getLocalizedString(purge_label_id),
+             actions.background(self.plugin.url_for('purge_' + collection_type)))
+        ], replaceItems=False)
+        return li

@@ -4,8 +4,10 @@ Module for Arte Zone
 
 # pylint: disable=import-error
 from xbmcswift2 import xbmc
+import xbmcgui
 from resources.lib import api
 from resources.lib.mapper.artecollection import ArteCollection
+from resources.lib import utils
 
 
 class ArteZone(ArteCollection):
@@ -27,11 +29,11 @@ class ArteZone(ArteCollection):
         cached_category = self._build_menu(
             zone.get('content'), 'category_page', zone_id=zone_id, page_id='HOME')
         if self._is_valid_menu(cached_category):
-            self.cached_categories[zone_id] = cached_category
-            return {
-                'label': zone.get('title'),
-                'path': self.plugin.url_for('cached_category', zone_id=zone_id)
-            }
+            self.cached_categories[zone_id] = utils.getDictFromListItemInList(cached_category)
+            li = xbmcgui.ListItem(label=zone.get('title'))
+            li.setPath(self.plugin.url_for('cached_category', zone_id=zone_id))
+            li.setProperty('is_playable', 'False')
+            return li
         return None
 
     def get_cached_item(self, zone_id):

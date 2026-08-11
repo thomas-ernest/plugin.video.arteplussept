@@ -6,6 +6,7 @@ from resources.lib import api
 from resources.lib import hof
 from resources.lib import settings as stg
 from resources.lib import user
+from resources.lib import utils
 from resources.lib.mapper import mapper
 from resources.lib.mapper.arteitem import ArteItem
 from resources.lib.mapper.arteliveitem import ArteLiveItem
@@ -24,10 +25,10 @@ def build_home_page(plugin, settings, cached_categories):
             .build_item_live(settings.quality, '1'))
     # pylint: disable=broad-exception-caught
     except Exception as error:
-        xbmc.log("Unable to build live stream item with " +
-                 f"lang:{settings.language} quality:{settings.quality} " +
-                 f"because \"{str(error)}\"",
-                 level=xbmc.LOGERROR)
+         xbmc.log("Unable to build live stream item with " +
+                  f"lang:{settings.language} quality:{settings.quality} " +
+                  f"because \"{str(error)}\"",
+                  level=xbmc.LOGERROR)
 
     try:
         arte_home = api.page_content(settings.language)
@@ -37,10 +38,10 @@ def build_home_page(plugin, settings, cached_categories):
                 addon_menu.append(menu_item)
     # pylint: disable=broad-exception-caught
     except Exception as error:
-        xbmc.log("Unable to build home items with " +
-                 f"lang:{settings.language} quality:{settings.quality} " +
-                 f"because \"{str(error)}\"",
-                 level=xbmc.LOGERROR)
+         xbmc.log("Unable to build home items with " +
+                  f"lang:{settings.language} quality:{settings.quality} " +
+                  f"because \"{str(error)}\"",
+                  level=xbmc.LOGERROR)
 
     return addon_menu
 
@@ -74,7 +75,7 @@ def get_cached_category(plugin, settings, zone_id, cached_categories):
     """Return the menu for a category that is stored
     in cache from previous api call like home page.
     The cache is refreshed with an API call, when the entry expired or was never cached."""
-    return ArteZone(plugin, settings, cached_categories).get_cached_item(zone_id)
+    return utils.getListItemFromDictInList(cached_categories[zone_id])
 
 
 def mark_as_watched(plugin, usr, program_id, label):
