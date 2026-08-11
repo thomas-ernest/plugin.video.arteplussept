@@ -13,17 +13,30 @@ cd "$SCRIPT_DIR/.." || exit 1
 echo "==> Checking if Python $PYTHON_VERSION is installed..."
 [ "$(python --version 2>&1 | cut -d' ' -f2 | cut -d. -f1-2)" = $PYTHON_VERSION ] || exit 3
 
-echo "==> Upgrading pip..."
-python -m pip install --upgrade pip
+echo "==> Ensuring pip is available..."
+if python -m pip --version >/dev/null 2>&1; then
+    echo "==> pip is already available"
+else
+    echo "==> pip not found, bootstrapping pip..."
+    python -m ensurepip --upgrade
+fi
 
 # -----------------------------
 # INSTALL TOOLS
 # -----------------------------
-echo "==> Installing kodi-addon-checker..."
-pip3 install --user kodi-addon-checker
+ensure_package() {
+    local package="$1"
+    if python -m pip show "$package" >/dev/null 2>&1; then
+        echo "==> $package is already installed"
+    else
+        echo "==> Installing $package..."
+        python -m pip install --user "$package"
+    fi
+}
 
-echo "==> Installing pylint, flake8, kodistubs..."
-pip3 install --user pylint flake8 kodistubs
+for pkg in pylint flake8 kodistubs kodi-addon-checker; do
+    ensure_package "$pkg"
+done
 
 # -----------------------------
 # RUN KODI ADDON CHECKER
