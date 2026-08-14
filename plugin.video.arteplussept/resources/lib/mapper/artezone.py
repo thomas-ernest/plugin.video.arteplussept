@@ -2,10 +2,10 @@
 Module for Arte Zone
 """
 
+import xbmc
 import xbmcgui
 from resources.lib import api
 from resources.lib.mapper.artecollection import ArteCollection
-from resources.lib import utils
 
 
 class ArteZone(ArteCollection):
@@ -14,33 +14,38 @@ class ArteZone(ArteCollection):
     ArteSearch is a special type of zone.
     """
 
-    def __init__(self, plugin, settings, cached_categories=None):
-        super().__init__(plugin, settings)
-        self.cached_categories = cached_categories
-
     def build_item(self, zone):
         """
         Return a menu entry to access content of cached category item i.e.
         a zone in the HOME page or SEARH page result.
         """
-        zone_id = zone.get('id')
-        cached_category = self._build_menu(
-            zone.get('content'), 'category_page', zone_id=zone_id, page_id='HOME')
-        if self._is_valid_menu(cached_category):
-            self.cached_categories[zone_id] = utils.getDictFromListItemInList(cached_category)
+
+        if self._is_valid_zone(zone):
+            zone_id = zone.get('id')
             li = xbmcgui.ListItem(label=zone.get('title'))
-            li.setPath(self.plugin.url_for('cached_category', zone_id=zone_id))
+            li.setPath(self.plugin.url_for(
+                'category_page', zone_id=zone_id, page_id='HOME', page='1'))
             li.setProperty('is_playable', 'False')
             return li
+        xbmc.log(f"Ignore zone {zone.get('label')}, no valid content", xbmc.LOGINFO)
         return None
 
-    def _is_valid_menu(self, cached_category):
+    def _is_valid_zone(self, zone):
         """
-        Menu is valid, if it is a list with at least one element is not None.
-        It is not valid if the list contains only None elements
+        Zone is valid, if it contains content data which empty
+        or which contains not only EXTERNAL items
         """
-        return isinstance(cached_category, list) and \
-            any(elem is not None for elem in cached_category)
+        data = (zone or {}).get("content", {}).get("data")
+        if isinstance(data, list) and len(data) >= 1:
+            valid_count = 0
+            for item in data:
+                item_kind = (item or {}).get("kind", {}).get("code")
+                if item_kind != 'EXTERNAL':
+                    valid_count = valid_count + 1
+            # if there is not at least one valid item, them zone is not valid
+            return valid_count >= 1
+        # we cannot be sure it is valid or not, we don't know what it contains
+        return True
 
     def build_menu(self, zone_id, page, page_id):
         """

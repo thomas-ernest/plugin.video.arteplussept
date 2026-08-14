@@ -61,25 +61,6 @@ class RoutingMixin:
             pl.add(item.getPath(), item)
         return pl
 
-    def play_video(self, item):
-        """Play a dictionary-based playable item with metadata."""
-        if not isinstance(item, dict):
-            return False
-        path = item.getPath()
-        if not path:
-            return False
-        try:
-            xbmc.Player().play(str(path), item)
-            return True
-        # pylint: disable=broad-exception-caught
-        except Exception:
-            return False
-
-    def set_content(self, content):
-        """Set the content type for the current directory (e.g., 'movies', 'tvshows')."""
-        if self.handle is not None and content:
-            xbmcplugin.setContent(self.handle, content)
-
     def run(self):
         """Dispatch to a registered route based on the 'route' query parameter."""
         self.handle = int(sys.argv[1]) if len(sys.argv) > 1 else None
