@@ -275,7 +275,6 @@ class ArteTvVideoItem(ArteVideoItem):
             date = None
         return date
 
-
     def _get_image_url(self, wished_res, wished_text):
         item = self.json_dict
         image_url = None

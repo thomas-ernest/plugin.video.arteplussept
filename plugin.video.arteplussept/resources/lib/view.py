@@ -6,7 +6,6 @@ from resources.lib import api
 from resources.lib import hof
 from resources.lib import settings as stg
 from resources.lib import user
-from resources.lib import utils
 from resources.lib.mapper import mapper
 from resources.lib.mapper.arteitem import ArteItem
 from resources.lib.mapper.arteliveitem import ArteLiveItem
@@ -14,7 +13,7 @@ from resources.lib.mapper.artesearch import ArteSearch
 from resources.lib.mapper.artezone import ArteZone
 
 
-def build_home_page(plugin, settings, cached_categories):
+def build_home_page(plugin, settings):
     """Display home menu based on fixed entries and then content from API home page"""
     addon_menu = [
         ArteSearch(plugin, settings).build_item()
@@ -25,23 +24,23 @@ def build_home_page(plugin, settings, cached_categories):
             .build_item_live(settings.quality, '1'))
     # pylint: disable=broad-exception-caught
     except Exception as error:
-         xbmc.log("Unable to build live stream item with " +
-                  f"lang:{settings.language} quality:{settings.quality} " +
-                  f"because \"{str(error)}\"",
-                  level=xbmc.LOGERROR)
+        xbmc.log("Unable to build live stream item with " +
+                 f"lang:{settings.language} quality:{settings.quality} " +
+                 f"because \"{str(error)}\"",
+                 level=xbmc.LOGERROR)
 
     try:
         arte_home = api.page_content(settings.language)
         for zone in arte_home.get('zones'):
-            menu_item = mapper.map_zone_to_item(plugin, settings, zone, cached_categories)
+            menu_item = mapper.map_zone_to_item(plugin, settings, zone)
             if menu_item:
                 addon_menu.append(menu_item)
     # pylint: disable=broad-exception-caught
     except Exception as error:
-         xbmc.log("Unable to build home items with " +
-                  f"lang:{settings.language} quality:{settings.quality} " +
-                  f"because \"{str(error)}\"",
-                  level=xbmc.LOGERROR)
+        xbmc.log("Unable to build home items with " +
+                 f"lang:{settings.language} quality:{settings.quality} " +
+                 f"because \"{str(error)}\"",
+                 level=xbmc.LOGERROR)
 
     return addon_menu
 

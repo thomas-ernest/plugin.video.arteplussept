@@ -45,8 +45,7 @@ def display_index():
         addon.setSetting("last_version_notified", current_version)
         addon.setSetting("last_date_notified", date.today().strftime(DATE_FORMAT))
 
-    lst_itms = view.build_home_page(
-        plugin, settings, plugin.get_storage('cached_categories', ttl=60))
+    lst_itms = view.build_home_page(plugin, settings)
     logger.log_xbmc(lst_itms, 'index')
     return lst_itms
 
@@ -79,20 +78,10 @@ def display_api_category(category_code):
     return lst_itms
 
 
-@plugin.route('/category/cached/<zone_id>', name='cached_category')
-def display_cached_category(zone_id):
-    """Display the menu for a category that is stored
-    in cache from previous api call like home page"""
-    lst_itms = view.get_cached_category(
-        plugin, settings, zone_id, plugin.get_storage('cached_categories', ttl=60))
-    logger.log_xbmc(lst_itms, 'cached_category')
-    return lst_itms
-
-
 @plugin.route('/category/page/<zone_id>/<page>/<page_id>', name='category_page')
 def display_category_page(zone_id, page, page_id):
     """Display the menu for a category that needs an api call"""
-    lst_itms = ArteZone(plugin, settings, plugin.get_storage('cached_categories', ttl=60)) \
+    lst_itms = ArteZone(plugin, settings) \
         .build_menu(zone_id, page, page_id)
     logger.log_xbmc(lst_itms, 'category_page')
     return lst_itms
@@ -233,12 +222,15 @@ def play(kind, program_id, mpaa, play_from=PlayFrom.ITM, audio_slot='1'):
     else:
         played_item = None
         try:
-            played_item = view.build_stream_url(plugin, settings, kind, program_id, int(audio_slot))
+            played_item = view.build_stream_url(
+                plugin, settings, kind, program_id, int(audio_slot))
+        # pylint: disable=broad-exception-caught
         except Exception as exp:
-            xbmc.log(f"Exception during stream resolution {traceback.format_tb(exp.__traceback__)}", xbmc.LOGERROR)
+            stack_trace = traceback.format_tb(exp.__traceback__)
+            xbmc.log(f"Exception during stream resolution {stack_trace}", xbmc.LOGERROR)
         if played_item is not None:
             logger.log_xbmc(played_item, 'play')
-            plugin.play_video(played_item)
+            xbmc.Player().play(played_item.getPath(), played_item)
         else:
             xbmc.log("Could not resolve stream...", xbmc.LOGERROR)
             addon = xbmcaddon.Addon()

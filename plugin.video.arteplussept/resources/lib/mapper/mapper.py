@@ -185,9 +185,9 @@ def map_streams(plugin, item, streams, quality):
     return [map_stream(video_item, stream) for stream in sorted_filtered_streams]
 
 
-def map_zone_to_item(plugin, settings, zone, cached_categories):
+def map_zone_to_item(plugin, settings, zone):
     """Arte TV API page is split into zones. Map a 'zone' to menu item(s).
-    Populate cached_categories for zones with videos available in child 'content'"""
+    Never use cache, because we cannot store ListItem in it"""
     menu_item = None
     title = zone.get('title')
     if get_authenticated_content_type(zone) == 'sso-favorites':
@@ -195,7 +195,7 @@ def map_zone_to_item(plugin, settings, zone, cached_categories):
     elif get_authenticated_content_type(zone) == 'sso-personalzone':
         menu_item = ArteHistory(plugin, settings).build_item(title)
     elif zone.get('content') and zone.get('content').get('data'):
-        menu_item = ArteZone(plugin, settings, cached_categories).build_item(zone)
+        menu_item = ArteZone(plugin, settings).build_item(zone)
     elif zone.get('link'):
         menu_item = map_api_categories_item(plugin, zone)
     else:
