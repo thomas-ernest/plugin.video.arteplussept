@@ -6,7 +6,6 @@ import json
 import xbmcgui
 import xbmcvfs
 
-from resources.lib import utils
 from resources.lib.native_plugin import Plugin
 from . import settings
 
@@ -64,7 +63,7 @@ def to_jsonable(payload):
     if isinstance(payload, dict):
         return {str(key): to_jsonable(value) for key, value in payload.items()}
     if isinstance(payload, xbmcgui.ListItem):
-        return utils.getDictFromListItem(payload)
+        return get_dict_from_list_item(payload)
     if isinstance(payload, bytes):
         return payload.decode('utf-8', 'replace')
 
@@ -87,3 +86,74 @@ def to_jsonable(payload):
 def format_headers(headers):
     """Map headers into a readable string to be logged."""
     return '\n'.join(f'{k}: {v}' for k, v in headers.items())
+
+
+def get_dict_from_info_tag_video(li):
+    """Extract common video InfoTag fields from a ListItem's VideoInfoTag into a dict.
+
+    This probes the tag for known getters and only calls them when present,
+    avoiding broad exception handling.
+    """
+    if not hasattr(li, 'getVideoInfoTag'):
+        return None
+
+    tag = li.getVideoInfoTag()
+    if not tag:
+        return None
+
+    info = {}
+    info['title'] = tag.getTitle()
+    info['plot'] = tag.getPlot()
+    info['plotoutline'] = tag.getPlotOutline()
+    # No mpaa exposed, but Nexus and earlier does
+    if hasattr(tag, 'getMpaa'):
+        info['mpaa'] = tag.getMpaa()
+    info['duration'] = tag.getDuration()
+    info['firstairedasw3c'] = tag.getFirstAiredAsW3C()
+    genres = tag.getGenres()
+    info['genres'] = list(genres) if genres is not None else None
+    directors = tag.getDirectors()
+    info['directors'] = list(directors) if directors is not None else None
+    writers = tag.getWriters()
+    info['writers'] = list(writers) if writers is not None else None
+    # No countries exposed, but Nexus and earlier does
+    if hasattr(tag, 'getCountries'):
+        countries = tag.getCountries()
+        info['countries'] = list(countries) if countries is not None else None
+    info['year'] = tag.getYear()
+
+    return info
+
+
+def get_dict_from_list_item(li):
+    """
+    Serialize an xbmcgui.ListItem into a plain dict so it can be
+    JSON-serialized / persisted. Be defensive: not all ListItem
+    implementations expose the same getter methods, so wrap calls.
+    """
+    result = {}
+    result['label'] = li.getLabel()
+    result['path'] = li.getPath()
+    result['art'] = {}
+    for art_key in ['thumb', 'fanart']:
+        result['art'][art_key] = li.getArt(art_key)
+    props = {}
+    if hasattr(li, 'getProperties'):
+        props = li.getProperties()
+    else:
+        # fall back to probing a set of commonly used property keys
+        if hasattr(li, 'getProperty'):
+            for key in ('is_playable', 'StartOffset', 'StartPercent'):
+                val = li.getProperty(key)
+                if val is not None and val != '':
+                    props[key] = val
+    result['properties'] = props
+
+    # info labels (metadata)
+    if hasattr(li, 'getInfoLabels') and li.getInfoLabels():
+        result['info'] = li.getInfoLabels()
+
+    # video InfoTag (detailed metadata) when available
+    result['video_info_tag'] = get_dict_from_info_tag_video(li)
+
+    return result
