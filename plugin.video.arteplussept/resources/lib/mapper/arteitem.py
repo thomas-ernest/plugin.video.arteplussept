@@ -328,6 +328,9 @@ class ArteHbbTvVideoItem(ArteVideoItem):
         authors = self._get_authors()
         if authors:
             tag.setWriters(authors)
+        actors = self._get_actors()
+        if actors:
+            tag.setCast(actors)
         return li
 
     def _get_year(self):
@@ -360,6 +363,20 @@ class ArteHbbTvVideoItem(ArteVideoItem):
                 if isinstance(member_name, str) and member_name.strip():
                     authors.add(member_name)
         return list(authors)
+
+    def _get_actors(self):
+        item = self.json_dict
+        actors = []
+        for actor_api in item.get('casting', []):
+            if actor_api.get('activityCode') == 'ACT':
+                name = actor_api.get('name')
+                if isinstance(name, str):
+                    actor_xbmc = xbmc.Actor(name.strip())
+                    role = actor_api.get('characterName')
+                    if isinstance(role, str) and role.strip():
+                        actor_xbmc.setRole(role.strip())
+                    actors.append(actor_xbmc)
+        return actors
 
     def _get_air_date(self):
         airdate = self.json_dict.get('broadcastBegin')

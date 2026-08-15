@@ -114,6 +114,11 @@ def get_dict_from_info_tag_video(li):
     info['genres'] = list(genres) if genres is not None else None
     directors = tag.getDirectors()
     info['directors'] = list(directors) if directors is not None else None
+    actors = tag.getActors()
+    if isinstance(actors, list):
+        info['actors'] = []
+        for actor in actors:
+            info['actors'].append({'name': actor.getName(), 'role': actor.getRole()})
     writers = tag.getWriters()
     info['writers'] = list(writers) if writers is not None else None
     # No countries exposed, but Nexus and earlier does
