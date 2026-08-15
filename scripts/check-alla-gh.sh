@@ -41,8 +41,9 @@ done
 # -----------------------------
 # RUN KODI ADDON CHECKER
 # -----------------------------
-echo "==> Removing __pycache__ ..."
+echo "==> Removing build and test cache ..."
 find . -type d -name __pycache__ -exec rm -rf {} +
+find . -type d -name .pytest_cache -exec rm -rf {} +
 
 echo "==> Running kodi-addon-checker on addon root..."
 export PYTHON_SCRIPT="$HOME/AppData/Roaming/Python/Python${PYTHON_VERSION//./}/Scripts"
