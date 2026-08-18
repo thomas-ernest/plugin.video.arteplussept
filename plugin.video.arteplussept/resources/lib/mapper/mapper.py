@@ -196,11 +196,11 @@ def map_zone_to_item(plugin, settings, zone):
         menu_item = ArteHistory(plugin, settings).build_item(title)
     elif zone.get('content') and zone.get('content').get('data'):
         menu_item = ArteZone(plugin, settings).build_item(zone)
-    elif zone.get('link'):
-        menu_item = map_api_categories_item(plugin, zone)
+#    elif zone.get('link'):
+#        menu_item = map_api_categories_item(plugin, zone)
     else:
         xbmc.log(
-            f"Zone \"{title}\" will be ignored. No link. No content. id unknown.",
+            f"Ignore zone \"{title}\". No link. No content. Unknown id.",
             level=xbmc.LOGINFO)
 
     return menu_item
@@ -216,16 +216,6 @@ def get_authenticated_content_type(artetv_zone):
     if not isinstance(artetv_zone.get('authenticatedContent'), dict):
         return None
     return artetv_zone.get('authenticatedContent', {}).get('contentId', None)
-
-
-def map_api_categories_item(plugin, item):
-    """Return a menu entry to access content of category item.
-    :param dict item: JSON node item
-    """
-    li = xbmcgui.ListItem(label=item.get('title'))
-    li.setPath(plugin.url_for('api_category', category_code=item.get('link').get('page')))
-    li.setProperty('is_playable', 'False')
-    return li
 
 
 def map_playable(streams, quality, audio_slot, match):
