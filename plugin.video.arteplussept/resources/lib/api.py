@@ -283,10 +283,10 @@ def streams(kind, program_id, lang):
     return _load_json('hbbtv_streams', url).get('videoStreams', [])
 
 
-def page_content(lang):
+def page_content(lang, cat='HOME'):
     """Get content to be display in a page. It can be a page for a category or the home page."""
     url = _ARTETV_URL + ARTETV_ENDPOINTS['page'].format(
-        lang=lang, category='HOME', client='tv')
+        lang=lang, category=cat, client='tv')
     return _load_json_full_url('artetv_home', url, ARTETV_HEADERS)
 
 

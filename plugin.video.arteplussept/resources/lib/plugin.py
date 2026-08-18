@@ -75,6 +75,15 @@ def display_category_page(zone_id, page, page_id):
     return lst_itms
 
 
+@plugin.route('/raw_page/<category>', name='raw_page')
+def display_raw_page(category):
+    """Display the menu for a category that needs an api call"""
+    lst_itms = view.build_page(plugin, settings, category)
+    xbmc.log(f"all my lst_itms {lst_itms}", xbmc.LOGWARNING)
+    logger.log_xbmc(lst_itms, 'raw_page')
+    return lst_itms
+
+
 @plugin.route('/favorites', name='favorites_default')
 @plugin.route('/favorites/<page>', name='favorites')
 def display_favorites(page=1):
