@@ -5,6 +5,7 @@ from xbmcswift2 import xbmc
 from resources.lib.mapper.arteitem import ArteItem
 from resources.lib.mapper.arteliveitem import ArteLiveItem
 from resources.lib.mapper.artesearch import ArteSearch
+from resources.lib.mapper.artezone import ArteZone
 from resources.lib import api
 from resources.lib import hof
 from resources.lib.mapper import mapper
@@ -42,6 +43,23 @@ def build_home_page(plugin, settings, cached_categories):
                  level=xbmc.LOGERROR)
 
     return addon_menu
+
+
+def build_page(plugin, settings, category):
+    """
+    Build a page for a category like SER, CIN, DOR...
+    A page is a list of zones.
+    To be extended to HOME.
+    """
+    page = api.page_content(settings.language, category)
+    page_menu = []
+    for zone in page.get('zones', []):
+        page_item = ArteZone(
+            plugin, settings, plugin.get_storage('cached_categories', TTL=60)
+        ).build_item(zone)
+        if page_item:
+            page_menu.append(page_item)
+    return page_menu
 
 
 def build_api_category(plugin, category_code, settings):
