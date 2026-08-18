@@ -27,7 +27,7 @@ class ArteZone(ArteCollection):
                 'category_page', zone_id=zone_id, page_id='HOME', page='1'))
             li.setProperty('is_playable', 'False')
             return li
-        xbmc.log(f"Ignore zone {zone.get('label')}, no valid content", xbmc.LOGINFO)
+        xbmc.log(f"Ignore zone {zone.get('label')}. No valid content, only external.", xbmc.LOGINFO)
         return None
 
     def _is_valid_zone(self, zone):

@@ -1,5 +1,4 @@
 """Manage views like home menu, dynamic menus, search, favorites..."""
-# pylint: disable=import-error
 import xbmc
 
 from resources.lib import api
@@ -8,6 +7,7 @@ from resources.lib import settings as stg
 from resources.lib import user
 from resources.lib.mapper import mapper
 from resources.lib.mapper.arteitem import ArteItem
+from resources.lib.mapper.arteitem import ArteTvVideoItem
 from resources.lib.mapper.arteliveitem import ArteLiveItem
 from resources.lib.mapper.artesearch import ArteSearch
 from resources.lib.mapper.artezone import ArteZone
@@ -54,27 +54,10 @@ def build_page(plugin, settings, category):
     page = api.page_content(settings.language, category)
     page_menu = []
     for zone in page.get('zones', []):
-        page_item = ArteZone(
-            plugin, settings, plugin.get_storage('cached_categories', TTL=60)
-        ).build_item(zone)
+        page_item = ArteZone(plugin, settings).build_item(zone)
         if page_item:
             page_menu.append(page_item)
     return page_menu
-
-
-def build_api_category(plugin, category_code, settings):
-    """Build the menu for a category that needs an api call"""
-    category = [mapper.map_category_item(plugin, item, category_code) for item in
-                api.category(category_code, settings.language)]
-
-    return category
-
-
-def get_cached_category(plugin, settings, zone_id, cached_categories):
-    """Return the menu for a category that is stored
-    in cache from previous api call like home page.
-    The cache is refreshed with an API call, when the entry expired or was never cached."""
-    return utils.getListItemFromDictInList(cached_categories[zone_id])
 
 
 def mark_as_watched(plugin, usr, program_id, label):
@@ -138,6 +121,30 @@ def build_sibling_playlist(plugin, settings, program_id):
             parent_program.get('kind'), parent_program.get('programId'))
         return mapper.map_collection_as_playlist(plugin, settings, sibling_arte_items, program_id)
     return None
+
+
+def build_playlist_collection(plugin, settings, collection_id):
+    """
+    Build a playlist from artetv playlist api with multi lang streams
+    """
+    playlist = api.playlist_collection(settings.language, collection_id)
+    collection = []
+    first_prgm_id = None
+    for pl_prgm in playlist.get('attributes', {}).get('items', {}):
+        prgm_id = pl_prgm.get('providerId', None)
+        if prgm_id:
+            full_prgm = api.player_video(settings.language, prgm_id)
+            streams = full_prgm.get('attributes', {}).get('streams', [])
+            if len(streams) > 0:
+                path = streams[0].get('url', None)
+                if path:
+                    prgm_attr = full_prgm.get('attributes', {}).get('metadata', {})
+                    collection.append(
+                        ArteTvVideoItem(plugin, prgm_attr).build_item(path, True)
+                    )
+                    if first_prgm_id is None:
+                        first_prgm_id = prgm_id
+    return {'collection': collection, 'start_program_id': first_prgm_id}
 
 
 def build_collection_playlist(plugin, settings, kind, collection_id):

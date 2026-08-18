@@ -15,7 +15,7 @@ _HBBTV_HEADERS = {
     'user-agent': f"{_PLUGIN_NAME}/{_PLUGIN_VERSION}"
 }
 _HBBTV_ENDPOINTS = {
-    'category': '/EMAC/teasers/category/v2/{category_code}/{lang}',
+    # 'category': '/EMAC/teasers/category/v2/{category_code}/{lang}',
     'collection': '/EMAC/teasers/collection/v2/{collection_id}/{lang}',
     # program details
     'video': '/OPA/v3/videos/{program_id}/{lang}',
@@ -55,6 +55,7 @@ ARTETV_ENDPOINTS = {
     'personal_data': '/sso/v3/me',
     # program_id can be 103520-000-A or LIVE
     'player': '/player/v2/config/{lang}/{program_id}',
+    'playlist': '/player/v2/playlist/{lang}/{collection_id}',
     'program': '/emac/v4/{lang}/web/programs/{program_id}',
     # category=HOME, CIN, SER, SEARCH client=app, tv, web, orange, free
     'page': '/emac/v4/{lang}/{client}/pages/{category}/',
@@ -206,6 +207,12 @@ def player_video(lang, program_id):
     return _load_json_full_url('artetv_player', url, None).get('data', {})
 
 
+def playlist_collection(lang, collection_id):
+    """Get the info of content program_id from Arte TV API."""
+    url = _ARTETV_URL + ARTETV_ENDPOINTS['playlist'].format(lang=lang, collection_id=collection_id)
+    return _load_json_full_url('artetv_player', url, None).get('data', {})
+
+
 def program_video(lang, program_id):
     """Get the info of content program_id from Arte TV API."""
     url = _ARTETV_URL + ARTETV_ENDPOINTS['program'].format(lang=lang, program_id=program_id)
@@ -229,12 +236,12 @@ def get_parent_collection(lang, program_id):
 def is_of_kind(arte_item, kind):
     """Return true if arte_item is not None and of the kind provided as parameter"""
     return (arte_item and arte_item.get('kind') == kind) or False
-
-
-def category(category_code, lang):
-    """Get the info of category with category_code."""
-    url = _HBBTV_ENDPOINTS['category'].format(category_code=category_code, lang=lang)
-    return _load_json('hbbtv_category', url).get('category', {})
+#
+#
+# def category(category_code, lang):
+#     """Get the info of category with category_code."""
+#     url = _HBBTV_ENDPOINTS['category'].format(category_code=category_code, lang=lang)
+#     return _load_json('hbbtv_category', url).get('category', {})
 
 
 def collection(kind, collection_id, lang):

@@ -70,14 +70,6 @@ def days_since(date_str):
     return (today - other).days
 
 
-@plugin.route('/category/api/<category_code>', name='api_category')
-def display_api_category(category_code):
-    """Display the menu for a category that needs an api call"""
-    lst_itms = view.build_api_category(plugin, category_code, settings)
-    logger.log_xbmc(lst_itms, 'api_category')
-    return lst_itms
-
-
 @plugin.route('/category/page/<zone_id>/<page>/<page_id>', name='category_page')
 def display_category_page(zone_id, page, page_id):
     """Display the menu for a category that needs an api call"""
@@ -246,7 +238,8 @@ def play_collection(kind, collection_id, mpaa):
     """
     Load a playlist and start playing its first item.
     """
-    playlist = view.build_collection_playlist(plugin, settings, kind, collection_id)
+    # playlist = view.build_collection_playlist(plugin, settings, kind, collection_id)
+    playlist = view.build_playlist_collection(plugin, settings, collection_id)
 
     # Start playing with the first playlist item
     synched_player = Player(

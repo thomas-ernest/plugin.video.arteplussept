@@ -158,3 +158,81 @@ various docs and examples
 # https://github.com/firsttris/plugin.video.sendtokodi/tree/master/tests
 # https://github.com/sbroenne/plugin.video.nhkworldtv/tree/main/plugin.video.nhkworldtv/tests
 # https://github.com/audiosistem/Bee-Queen/blob/main/matrix/plugin.video.jacktook/GEMINI.md?plain=1
+
+## Route graph
+
+The Mermaid graph below is a conceptual view of the main routes defined in plugin.py. Each node is a route, with menu/list-item routes shown in blue, video playback routes in green, and background actions in orange. Bidirectional edges represent navigation from a list item to another route, while one-way edges represent context-menu actions or direct plugin URL navigation. Playback-related edges are shown as bidirectional links when a menu item can lead to a play route and the play route can return to the originating menu context.
+
+```mermaid
+graph LR
+    index["index (menu)"]
+    api_category["api_category (menu)"]
+    cached_category["cached_category (menu)"]
+    category_page["category_page (menu)"]
+    favorites_default["favorites_default (menu)"]
+    favorites["favorites (menu)"]
+    add_favorite["add_favorite (action)"]
+    remove_favorite["remove_favorite (action)"]
+    purge_favorites["purge_favorites (action)"]
+    mark_as_watched["mark_as_watched (action)"]
+    last_viewed_default["last_viewed_default (menu)"]
+    last_viewed["last_viewed (menu)"]
+    purge_last_viewed["purge_last_viewed (action)"]
+    collection["collection (menu)"]
+    streams["streams (menu)"]
+    play_live["play_live (video)"]
+    play["play (video)"]
+    play_from["play_from (video)"]
+    play_specific["play_specific (video)"]
+    play_collection["play_collection (video)"]
+    init_search["init_search (menu)"]
+    search["search (menu)"]
+    user_login["user_login (action)"]
+    user_logout["user_logout (action)"]
+
+    index <--> api_category
+    index <--> cached_category
+    index <--> category_page
+    index <--> favorites_default
+    index <--> last_viewed_default
+    index <--> collection
+    index <--> streams
+    index <--> init_search
+    index <--> user_login
+    index <--> user_logout
+
+    favorites_default <--> favorites
+    favorites -->|if authenticated| add_favorite
+    favorites -->|if authenticated| remove_favorite
+    favorites -->|if authenticated| purge_favorites
+    favorites -->|if authenticated| mark_as_watched
+
+    last_viewed_default <--> last_viewed
+    last_viewed -->|if authenticated| purge_last_viewed
+
+    collection <-->|if playable item| play
+    collection <-->|if playable item| play_from
+    collection <-->|if playable item| play_specific
+    collection <-->|if collection item| play_collection
+    streams <-->|if playable item| play
+    streams <-->|if live stream| play_live
+    favorites <-->|if playable item| play
+    favorites <-->|if playable item| play_from
+    favorites <-->|if playable item| play_specific
+    favorites <-->|if collection item| play_collection
+    search <-->|if playable item| play
+    search <-->|if playable item| play_from
+    search <-->|if playable item| play_specific
+    search <-->|if collection item| play_collection
+    play -->|play context| play_from
+    play_from -->|audio selection| play_specific
+    init_search -->|search results| search
+
+    classDef menu fill:#dbeafe,stroke:#1d4ed8,color:#0f172a;
+    classDef video fill:#dcfce7,stroke:#16a34a,color:#052e16;
+    classDef action fill:#fef3c7,stroke:#d97706,color:#451a03;
+
+    class index,api_category,cached_category,category_page,favorites_default,favorites,last_viewed_default,last_viewed,collection,streams,init_search,search menu;
+    class play_live,play,play_from,play_specific,play_collection video;
+    class add_favorite,remove_favorite,purge_favorites,mark_as_watched,purge_last_viewed,user_login,user_logout action;
+```
