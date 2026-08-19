@@ -210,7 +210,7 @@ def player_video(lang, program_id):
 def playlist_collection(lang, collection_id):
     """Get the info of content program_id from Arte TV API."""
     url = _ARTETV_URL + ARTETV_ENDPOINTS['playlist'].format(lang=lang, collection_id=collection_id)
-    return _load_json_full_url('artetv_player', url, None).get('data', {})
+    return _load_json_full_url('artetv_playlist', url, None).get('data', {})
 
 
 def program_video(lang, program_id):

@@ -83,9 +83,9 @@ If you get an issue after a fresh manual installation, you should try
 either to restart in order to install dependencies automatically
 either to install the dependancies manually. The dependancies are :
 
-* xbmcswift2 (script.module.xbmcswift2)
 * requests (script.module.requests)
 * dateutil (script.module.dateutil)
+* adaptative inputstream (inputstream.adaptive)
 
 They should be in the "addon libraries" section of the official repository.
 
@@ -149,11 +149,10 @@ Steps run automatically by CI, with troubleshooting guide.
 2.  **Run all tests**:
     In plugin root folder
     ```bash
-    PYTHONPATH="$PWD/plugin.video.arteplussept;$HOME/AppData/Roaming/Kodi/addons/script.module.xbmcswift2/lib" python -m pytest -vv tests/test_lib_mapper_arteliveitem.py
+    PYTHONPATH="$PWD/plugin.video.arteplussept;" python -m pytest -vv tests/test_lib_mapper_arteliveitem.py
     ```
     
 various docs and examples
-# https://xbmcswift2.readthedocs.io/en/latest/commandline.html
 # https://github.com/eral/kodi.plugin.video.u-next-animefree-eral-test/blob/master/tests/script_addon_router_for_kodi_test.py
 # https://github.com/firsttris/plugin.video.sendtokodi/tree/master/tests
 # https://github.com/sbroenne/plugin.video.nhkworldtv/tree/main/plugin.video.nhkworldtv/tests

@@ -1,15 +1,17 @@
-"""Lightweight native Plugin replacement for xbmcswift2 routing/navigation.
+"""
+Lightweight native Plugin mainly for routing/navigation.
 This provides:
 - Plugin.route(path, name=...) decorator to register handlers
 - Plugin.run() to dispatch based on sys.argv
 - Plugin.url_for(route_name, **kwargs) to build plugin URLs
-- Minimal helpers: set_content, add_to_playlist=>map_collection_to_playlist, get_storage
-
-This is intentionally minimal and tailored to this addon
-to remove the xbmcswift2 routing dependency.
+- Plugin.get_storage
+- Plugin.notify
 """
+
 import json
 import os
+import inspect
+import re
 import sys
 import time
 import urllib.parse
@@ -25,7 +27,11 @@ class RoutingMixin:
     """Routing and playback helpers for native Kodi plugin URLs."""
 
     def __init__(self, *args, **kwargs):
-        self.base_url = sys.argv[0]
+        current_url = urllib.parse.urlparse(sys.argv[0])
+        if current_url.scheme and current_url.netloc:
+            self.base_url = f"{current_url.scheme}://{current_url.netloc}"
+        else:
+            self.base_url = sys.argv[0]
         try:
             self.handle = int(sys.argv[1])
         # pylint: disable=broad-exception-caught
@@ -47,19 +53,36 @@ class RoutingMixin:
 
     def url_for(self, route_name, **kwargs):
         """Build a plugin URL for a registered route."""
+        route_path = self._url_paths.get(route_name, '')
+        path_params = set(re.findall(r'<([^>]+)>', route_path))
+        for key in path_params:
+            if key in kwargs:
+                route_path = route_path.replace(
+                    f'<{key}>', urllib.parse.quote(str(kwargs[key]), safe=''))
         params = {'route': route_name}
         for key, value in kwargs.items():
             params[key] = value
-        return self.base_url + self._url_paths.get(route_name, '') + '?' \
+        return self.base_url + route_path + '?' \
             + urllib.parse.urlencode(params)
 
-    def map_collection_to_playlist(self, collection):
-        """Add items to the video playlist."""
-        # Empty playlist, otherwise requested video is present twice in the playlist
-        pl = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-        for item in collection or []:
-            pl.add(item.getPath(), item)
-        return pl
+    def _route_from_path(self, path):
+        """Return the route name and parameters encoded in a plugin path."""
+        for route_name, route_path in self._url_paths.items():
+            path_parts = route_path.strip('/').split('/')
+            actual_parts = path.strip('/').split('/')
+            if len(path_parts) != len(actual_parts):
+                continue
+            params = {}
+            matches = True
+            for expected, actual in zip(path_parts, actual_parts):
+                if expected.startswith('<') and expected.endswith('>'):
+                    params[expected[1:-1]] = urllib.parse.unquote(actual)
+                elif expected != actual:
+                    matches = False
+                    break
+            if matches:
+                return route_name, params
+        return None, {}
 
     def run(self):
         """Dispatch to a registered route based on the 'route' query parameter."""
@@ -75,9 +98,9 @@ class RoutingMixin:
                 else value for key, value in params.items()
             }
             route = params.pop('route', None)
-        # route is in sys.argv[0] from settings with runplugin:// (and sys.argv[2] is empty)
+        # Route and parameters can also be encoded in the plugin path.
         elif sys.argv[0]:
-            route = urllib.parse.urlparse(sys.argv[0]).path
+            route, params = self._route_from_path(urllib.parse.urlparse(sys.argv[0]).path)
 
         if route == '/' or route is None:
             route = 'index'
@@ -87,10 +110,10 @@ class RoutingMixin:
             xbmc.log(f"No handler for route '{route}'", xbmc.LOGERROR)
             return
 
-        try:
-            result = handler(**params)
-        except TypeError:
-            result = handler()
+        accepted_params = inspect.signature(handler).parameters
+        result = handler(**{
+            key: value for key, value in params.items() if key in accepted_params
+        })
 
         if self.handle is not None:
             if isinstance(result, list):
@@ -191,8 +214,10 @@ class StorageMixin:
 
 class Plugin(RoutingMixin, StorageMixin):
     """
-    Composite native plugin implementation preserving xbmcswift2-compatible API.
-    Notification helpers for addon UI messages.
+    Plugin implementing:
+    - Routing
+    - File-based storage interface
+    - Notification
     """
 
     def __init__(self):
