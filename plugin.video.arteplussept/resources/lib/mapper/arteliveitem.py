@@ -1,6 +1,5 @@
 """
-Module for ArteLiveItem depends on ArteTvVideoItem and mapper module
-for map_playable and match_hbbtv
+Module for ArteLiveItem depends on ArteTvVideoItem
 """
 
 import html
@@ -8,8 +7,6 @@ import xbmcgui
 from resources.lib import actions
 from resources.lib import utils
 from resources.lib.utils import PlayFrom
-# the goal is to break/limit this dependency as much as possible
-from resources.lib.mapper import mapper
 from resources.lib.mapper.arteitem import ArteTvVideoItem
 
 
@@ -31,7 +28,7 @@ class ArteLiveItem(ArteTvVideoItem):
             label += f" - {html.unescape(subtitle)}"
         return label
 
-    def build_item_live(self, quality, audio_slot):
+    def build_item_live(self):
         """Return menu entry to watch live content from Arte TV API"""
         item = self.json_dict
         attr = item.get('attributes')
@@ -61,13 +58,14 @@ class ArteLiveItem(ArteTvVideoItem):
         if duration:
             tag.setDuration(duration)
         live_item.setProperty('is_playable', 'True')
+        live_item = self.add_adaptive_hls_attr(live_item)
 
         # playing the stream from program id makes the live starts from the beginning
         # while it starts the video like the live tv, with the above
-        live_stream_item = mapper.map_playable(
-            attr.get('streams'), quality, audio_slot, mapper.match_artetv)
-        if isinstance(live_stream_item, dict) and isinstance(live_stream_item.get('path'), str):
-            live_item.setPath(live_stream_item.get('path'))
+        streams = attr.get('streams', [])
+        if len(streams) > 0 and streams[0].get('url'):
+            path = streams[0].get('url')
+            live_item.setPath(path)
             live_item.addContextMenuItems([(
                 self.plugin.addon.getLocalizedString(30060),
                 actions.background(self.plugin.url_for(

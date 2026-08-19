@@ -61,7 +61,7 @@ def test_build_item_live_contract(plugin, payload, expected):
     """Test the build_item_live method of ArteLiveItem for contract compliance."""
     item = ArteLiveItem(plugin, load_json(payload).get('data'))
 
-    result = item.build_item_live(quality="SQ", audio_slot="1")
+    result = item.build_item_live()
 
     expected_json = load_json(expected)
     # Normalize context_menu array into tuple
