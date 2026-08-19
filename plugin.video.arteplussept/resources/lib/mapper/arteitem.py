@@ -1,11 +1,8 @@
 """
 Various Arte items : basic Arte item, Arte Colleciton, Arte Live Item, etc..
 """
-
 import html
 import datetime
-# pylint: disable=import-error
-import dateutil.parser
 # pylint: disable=import-error
 import xbmc
 import xbmcgui
@@ -16,7 +13,7 @@ from resources.lib import utils
 # pylint: disable=too-few-public-methods
 class ArteItem:
     """
-    Item of Arte TV or HBBTV API. It may be a video, a collection or anything.
+    Item of Arte TV API. It may be a video, a collection or anything.
     It aims at being mapped into XBMC ListItem.
     """
 
@@ -39,15 +36,13 @@ class ArteItem:
 
 class ArteVideoItem(ArteItem):
     """
-    Video item of Arte TV or HBBTV API. Extract data to build menu item with video details.
+    Video item of Arte TV API. Extract data to build menu item with video details.
     Use abstract method, when data is available in different ways between HBB TV and Arte TV API.
     It aims at being mapped into XBMC ListItem.
     """
 
     def build_item(self, path, is_playable):
         """Identify what is the type of current item and build the most detailled item possible"""
-        if self.is_hbbtv():
-            return ArteHbbTvVideoItem(self.plugin, self.json_dict).build_item(path, is_playable)
         return ArteTvVideoItem(self.plugin, self.json_dict).build_item(path, is_playable)
 
     def _build_item(self, path, is_playable):
@@ -141,21 +136,6 @@ class ArteVideoItem(ArteItem):
             is_playlist_var = program_id.startswith('RC-') or program_id.startswith('PL-')
         return is_playlist_var
 
-    def is_hbbtv(self):
-        """
-        Return True, if current item is coming from HBB TV API,
-        False if coming from Arte TV API.
-        """
-        is_hbbtv_content = True
-        item = self.json_dict
-        kind = item.get('kind')
-        if isinstance(kind, dict) and kind.get('code', False):
-            kind = kind.get('code')
-            is_hbbtv_content = False
-        if isinstance(item.get('lastviewed'), dict):
-            is_hbbtv_content = False
-        return is_hbbtv_content
-
     def _get_kind(self):
         """
         Return item kind as a string e.g.
@@ -208,22 +188,22 @@ class ArteTvVideoItem(ArteVideoItem):
             if kind in self.PREFERED_KINDS:
                 # content_type = Content.PLAYLIST
                 path = self.plugin.url_for(
-                    'play_collection', kind=kind, collection_id=program_id,
+                    'play_collection', collection_id=program_id,
                     mpaa=self._get_mpaa_age_rating())
                 is_playable = True
                 additional_context_menu = [(
                     self.plugin.addon.getLocalizedString(30011),
                     actions.update_view(
-                        self.plugin.url_for(
-                            'collection', kind=kind, program_id=program_id)))]
+                        self.plugin.url_for('collection', program_id=program_id))
+                )]
             else:
                 # content_type = Content.MENU_ITEM
-                path = self.plugin.url_for('collection', kind=kind, program_id=program_id)
+                path = self.plugin.url_for('collection', program_id=program_id)
                 is_playable = False
         else:
             # content_type = Content.VIDEO
             path = self.plugin.url_for(
-                'play', kind=kind, program_id=program_id,
+                'play', program_id=program_id,
                 mpaa=self._get_mpaa_age_rating())
             is_playable = True
 
@@ -240,6 +220,8 @@ class ArteTvVideoItem(ArteVideoItem):
         li = super()._build_item(path, is_playable)
         if li is None:
             return None
+        if is_playable:
+            li = self.add_adaptive_hls_attr(li)
         progress = self.get_progress()
         duration = self._get_duration()
 
@@ -253,6 +235,31 @@ class ArteTvVideoItem(ArteVideoItem):
 
         return li
 
+    def add_adaptive_hls_attr(self, li: xbmcgui.ListItem):
+        """
+        Add attributes for listitem to be played by inputstream adaptive
+        """
+        kodi_version = int(xbmc.getInfoLabel('System.BuildVersion')[0:2])
+        li.setMimeType('application/vnd.apple.mpegurl')
+        ia_name = 'inputstream.adaptive'
+        li.setContentLookup(False)
+        li.setProperty('inputstream', ia_name)
+        # DEPRECATED ON Kodi v21, because the manifest type is now auto-detected.
+        if kodi_version in [19, 20]:
+            li.setProperty(f"{ia_name}.manifest_type", 'hls')
+        # 'stream_headers' ON KODI v19
+        # 'manifest_headers' ON KODI v20 and v21
+        # 'common_headers' ON KODI v22 and above
+        prop_prefix = 'common'
+        if kodi_version == 19:
+            prop_prefix = 'stream'
+        elif kodi_version in [20, 21]:
+            prop_prefix = 'manifest'
+        prop = f"{ia_name}.{prop_prefix}_headers"
+        # li.setProperty(prop, f"User-Agent=(Windows NT 10.0; Win64; x64; rv:150.0)")
+        li.setProperty(prop, "User-Agent=Arte +7/1.6.0")
+        return li
+
     def _get_mpaa_age_rating(self):
         return utils.mpaa_from_age(self.json_dict.get('ageRating', None))
 
@@ -263,10 +270,11 @@ class ArteTvVideoItem(ArteVideoItem):
         return airdate
 
     def _parse_date_artetv(self, datestr):
-        """Try to parse ``datestr`` into a ``datetime`` object like 2022-07-01T03:00:00Z.
+        """
+        Try to parse ``datestr`` into a ``datetime`` object like 2022-07-01T03:00:00Z.
         Return ``None`` if parsing fails.
         Return a string in W3C format (YYYY-MM-DD).
-        Similar to ``parse_date_hbbtv``"""
+        """
         date = None
         try:
             date_obj = datetime.datetime.strptime(datestr, '%Y-%m-%dT%H:%M:%S%z')
@@ -325,107 +333,6 @@ class ArteTvVideoItem(ArteVideoItem):
         return item.get('lastviewed') and item.get('lastviewed').get('timecode') or 0
 
 
-class ArteHbbTvVideoItem(ArteVideoItem):
-    """
-    Data and methods to build a XBMC ListItem to play a video
-    from Arte HBB TV API data
-    """
-
-    def build_item(self, path, is_playable):
-        li = super()._build_item(path, is_playable)
-        if li is None:
-            return None
-        item = self.json_dict
-        tag = li.getVideoInfoTag()
-        tag.setGenres([item.get('genrePresse')])
-        year = self._get_year()
-        if isinstance(year, int):
-            tag.setYear(year)
-        tag.setCountries([country.get('label') for country in item.get('productionCountries', [])])
-        directors = self._get_directors()
-        if directors:
-            tag.setDirectors(directors)
-        authors = self._get_authors()
-        if authors:
-            tag.setWriters(authors)
-        actors = self._get_actors()
-        if actors:
-            tag.setCast(actors)
-        return li
-
-    def _get_year(self):
-        year = self.json_dict.get('productionYear')
-        if isinstance(year, int):
-            return year
-        if isinstance(year, str) and year.strip().isdigit():
-            return int(year)
-        return None
-
-    def _get_directors(self):
-        item = self.json_dict
-        directors = set()
-        main_director = item.get('director')
-        if isinstance(main_director, str) and main_director.strip():
-            directors.add(main_director)
-        for member in item.get('crew', []):
-            if member.get('activityCode') == 'REA':
-                member_name = member.get('label')
-                if isinstance(member_name, str) and member_name.strip():
-                    directors.add(member_name)
-        return list(directors)
-
-    def _get_authors(self):
-        item = self.json_dict
-        authors = set()
-        for member in item.get('crew', []):
-            if member.get('activityCode') == 'AUT':
-                member_name = member.get('label')
-                if isinstance(member_name, str) and member_name.strip():
-                    authors.add(member_name)
-        return list(authors)
-
-    def _get_actors(self):
-        item = self.json_dict
-        actors = []
-        for actor_api in item.get('casting', []):
-            if actor_api.get('activityCode') == 'ACT':
-                name = actor_api.get('name')
-                if isinstance(name, str):
-                    actor_xbmc = xbmc.Actor(name.strip())
-                    role = actor_api.get('characterName')
-                    if isinstance(role, str) and role.strip():
-                        actor_xbmc.setRole(role.strip())
-                    actors.append(actor_xbmc)
-        return actors
-
-    def _get_air_date(self):
-        airdate = self.json_dict.get('broadcastBegin')
-        if airdate is not None:
-            airdate = str(self._parse_date_hbbtv(airdate))
-        return airdate
-
-    def _parse_date_hbbtv(self, datestr):
-        """Try to parse ``datestr`` into a ``datetime`` object. Return ``None`` if parsing fails.
-        Return a string in W3C format (YYYY-MM-DD)
-        Similar to parse_date_artetv."""
-        date = None
-        try:
-            date_obj = dateutil.parser.parse(datestr)
-            date = date_obj.strftime("%Y-%m-%d")
-        except dateutil.parser.ParserError as error:
-            xbmc.log(
-                f"[plugin.video.arteplussept] Problem with parsing date: {error}",
-                level=xbmc.LOGWARNING)
-        return date
-
-    def _get_image_url(self, wished_res, wished_text):
-        # parameter are ignored in HBB TV, but needed for abstraction | inheritance
-        return self.json_dict.get('imageUrl')
-
-    def _get_kind(self):
-        return self.json_dict.get('kind')
-
-
 class ArteCollectionItem(ArteItem):
     """
     A collection item is different from a standard video item,
@@ -437,10 +344,9 @@ class ArteCollectionItem(ArteItem):
         """Map JSON item to menu entry to access playlist content"""
         item = self.json_dict
         program_id = item.get('programId')
-        kind = item.get('kind')
         label = self.format_title_and_subtitle()
         li = xbmcgui.ListItem(label=label)
-        li.setPath(self.plugin.url_for('collection', kind=kind, collection_id=program_id))
+        li.setPath(self.plugin.url_for('collection', program_id=program_id))
         li.setProperty('is_playable', 'False')
         tag = li.getVideoInfoTag()
         tag.setTitle(item.get('title'))

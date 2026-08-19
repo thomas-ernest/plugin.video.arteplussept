@@ -3,12 +3,8 @@
 import xbmc
 import xbmcgui
 from resources.lib import api
-from resources.lib import hof
 from resources.lib import utils
-from resources.lib.mapper.arteitem import ArteVideoItem
 from resources.lib.mapper.arteitem import ArteTvVideoItem
-from resources.lib.mapper.arteitem import ArteHbbTvVideoItem
-from resources.lib.mapper.arteitem import ArteCollectionItem
 from resources.lib.mapper.artezone import ArteZone
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
@@ -26,17 +22,6 @@ def map_category_item(plugin, item, category_code):
     li.setPath(path)
     li.setProperty('is_playable', 'False')
     return li
-
-
-def map_generic_item(plugin, item, show_video_streams):
-    """Return entry menu for video or playlist"""
-    if ArteVideoItem(plugin, item).is_playlist():
-        item = ArteCollectionItem(plugin, item).map_collection_as_menu_item()
-    elif show_video_streams is True:
-        item = map_video_streams_as_menu(plugin, item)
-    else:
-        item = map_video_as_item(plugin, item)
-    return item
 
 
 def map_collection_as_playlist(plugin, settings, arte_collection, req_start_program_id=None):
@@ -57,7 +42,9 @@ def map_collection_as_playlist(plugin, settings, arte_collection, req_start_prog
     start_program_id = arte_collection[0].get('programId')
     for arte_item in arte_collection or []:
 
-        xbmc_item = map_video_as_playlist_item(plugin, settings, arte_item)
+        # xbmc_item = map_video_as_playlist_item(plugin, settings, arte_item)
+        xbmc_item = build_video_from_program(plugin, settings, arte_item)
+
         if xbmc_item is None:
             break
 
@@ -84,105 +71,19 @@ def map_collection_as_playlist(plugin, settings, arte_collection, req_start_prog
     }
 
 
-def map_video_as_playlist_item(plugin, settings, item, audio_slot='1'):
+def build_video_from_program(plugin, settings, prgm_id):
     """
-    Create a direct playable video playlist item from a json returned by Arte HBBTV or ArteTV API.
+    Build a full playable video with metadata from a single program.
     """
-    program_id = item.get('programId')
-    kind = item.get('kind')
-    if isinstance(kind, dict) and kind.get('code', False):
-        kind = kind.get('code')
-
-    return map_video_as_playable_item(plugin, settings, kind, program_id, audio_slot)
-
-
-def map_video_as_playable_item(plugin, settings, kind, program_id, audio_slot='1'):
-    """Build a full playable video menu item with metadata for a single program."""
-
-    item = api.video(program_id, settings.language)
-    if item is None:
-        return None
-
-    if isinstance(kind, dict) and kind.get('code', False):
-        kind = kind.get('code')
-
-    stream_item = build_stream_url(plugin, settings, kind, program_id, audio_slot)
-
-    if stream_item is None:
-        return None
-
-    return ArteVideoItem(plugin, item).build_item(stream_item.get('path'), True)
-
-
-def build_stream_url(plugin, settings, kind, program_id, audio_slot):
-    """
-    Return URL to stream content.
-    If the content is not available, it tries to return a related trailer or teaser.
-    """
-    # normalize audio_slot into an int
-    try:
-        audio_slot = int(audio_slot)
-    except ValueError:
-        xbmc.log(f"Invalid audio_slot value: {audio_slot}. Defaulting to 1.", xbmc.LOGWARNING)
-        audio_slot = 1
-    # first try with content
-    program_stream = api.streams(kind, program_id, settings.language)
-    if program_stream:
-        return map_playable(
-            program_stream, settings.quality, audio_slot, match_hbbtv)
-    # second try to fallback clip. It allows to display a trailer,
-    # when a documentary is not available anymore like on arte tv website
-    clip_stream = api.streams('CLIP', program_id, settings.language)
-    if clip_stream:
-        return map_playable(
-            clip_stream, settings.quality, audio_slot, match_hbbtv)
-    # otherwise raise the error
-    msg = plugin.addon.getLocalizedString(30029)
-    plugin.notify(msg=msg.format(strm=program_id, ln=settings.language), image='error')
+    if prgm_id:
+        full_prgm = api.player_video(settings.language, prgm_id)
+        streams = full_prgm.get('attributes', {}).get('streams', [])
+        if len(streams) > 0:
+            path = streams[0].get('url', None)
+            if path:
+                prgm_attr = full_prgm.get('attributes', {}).get('metadata', {})
+                return ArteTvVideoItem(plugin, prgm_attr).build_item(path, True)
     return None
-
-
-def map_video_streams_as_menu(plugin, item):
-    """Create a menu item for video streams from a json returned by Arte HBBTV API"""
-    program_id = item.get('programId')
-    path = plugin.url_for('streams', program_id=program_id)
-    return ArteHbbTvVideoItem(plugin, item).build_item(path, False)
-
-
-def map_video_as_item(plugin, item):
-    """Create a playable video menu item from a json returned by Arte HBBTV API"""
-    program_id = item.get('programId')
-    kind = item.get('kind')
-    path = plugin.url_for('play', kind=kind, program_id=program_id, mpaa="Unknown")
-    return ArteHbbTvVideoItem(plugin, item).build_item(path, True)
-
-
-def map_streams(plugin, item, streams, quality):
-    """Map JSON item and list of audio streams into a menu."""
-    video_item = map_video_as_item(plugin, item)
-
-    filtered_streams = None
-    for qlt in [quality] + [i for i in ['SQ', 'EQ', 'HQ', 'MQ'] if i is not quality]:
-        filtered_streams = [s for s in streams if s.get('quality') == qlt]
-        if len(filtered_streams) > 0:
-            break
-
-    if filtered_streams is None or len(filtered_streams) == 0:
-        raise RuntimeError('Could not resolve stream...')
-
-    sorted_filtered_streams = sorted(
-        filtered_streams, key=lambda s: s.get('audioSlot'))
-
-    def map_stream(video_item, stream):
-        if not isinstance(video_item, xbmcgui.ListItem):
-            raise RuntimeError('video_item must be an instance of xbmcgui.ListItem')
-        video_item.setLabel(stream.get('audioLabel'))
-        video_item.setProperty('is_playable', 'True')
-        video_item.setPath(stream.get('url'))
-
-        return video_item
-
-    return [map_stream(video_item, stream) for stream in sorted_filtered_streams]
 
 
 def map_zone_to_item(plugin, settings, zone):
@@ -216,35 +117,3 @@ def get_authenticated_content_type(artetv_zone):
     if not isinstance(artetv_zone.get('authenticatedContent'), dict):
         return None
     return artetv_zone.get('authenticatedContent', {}).get('contentId', None)
-
-
-def map_playable(streams, quality, audio_slot, match):
-    """Select the stream best matching quality and audio slot criteria in streams
-    and map to a menu entry. Return None if no stream matches criteria."""
-    stream = None
-    for qlt in [quality] + [i for i in ['SQ', 'EQ', 'HQ', 'MQ'] if i is not quality]:
-        # pylint: disable=cell-var-from-loop
-        stream = hof.find(lambda s: match(s, qlt, audio_slot), streams)
-        if stream:
-            break
-
-    if stream is None:
-        return None
-
-    return {
-        'info_type': 'video',
-        'path': stream.get('url'),
-    }
-
-
-def match_hbbtv(stream, quality, audio_slot):
-    """Return True if item from HHB TV API matches quality and audio_slot constraints,
-    False otherwise"""
-    return stream.get('quality') == quality and stream.get('audioSlot') == audio_slot
-
-
-def match_artetv(stream, quality, audio_slot):
-    """Return True if item from Arte TV API matches quality and audio_slot constraints,
-    False otherwise"""
-    return stream.get('mainQuality').get('code') == quality \
-        and str(stream.get('slot')) == audio_slot
