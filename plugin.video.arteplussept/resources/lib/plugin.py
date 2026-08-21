@@ -1,10 +1,8 @@
 """Main module for Kodi add-on plugin.video.arteplussept"""
 
-# create play_collection_from with starting_program_id instead of
-# play_from to detect sibling playlist
-# when doing a play video from a view collection as menu, no playlist is built,
-# while it could be a play_collection_from
 # fix sync with arte tv during video playback
+# add a screenshot for multi lang
+# add page navigation from #74
 
 from datetime import date
 import traceback
@@ -19,7 +17,6 @@ from resources.lib import logger
 from resources.lib import user
 from resources.lib import utils
 from resources.lib import view
-from resources.lib.utils import PlayFrom
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
 from resources.lib.mapper.artesearch import ArteSearch
@@ -62,16 +59,12 @@ def days_since(date_str):
     """
     date_str: '2026-08-14' or '' (empty)
     Returns number of days between today and date_str.
-    If empty → MAX_INT.
     """
-
-    if not date_str:
-        return 1000000
-
     try:
+        # parse YYYY-MM-DD
         other = date.fromisoformat(date_str)
     except ValueError:
-        # invalid format, not a date
+        # invalid format or not a date
         return 1000000
 
     today = date.today()
@@ -153,25 +146,71 @@ def purge_last_viewed():
 @plugin.route('/collection/<program_id>', name='collection')
 def display_collection(program_id):
     """Display menu for collection of content"""
-    lst_itms = view.build_playlist_from_collection(plugin, settings, program_id)['collection']
+    lst_itms = view.build_playlist_from_collection(
+        plugin, settings, program_id, menu=True)['collection']
     logger.log_xbmc(lst_itms, 'collection')
     return lst_itms
 
 
-@plugin.route('/play_live/<stream_url>/<mpaa>', name='play_live')
+@plugin.route('/play/live/<stream_url>/<mpaa>', name='play_live')
 def play_live(stream_url, mpaa):
     """Play live content."""
     utils.warn_if_age_restricted(plugin, mpaa)
     xbmc.Player().play(stream_url)
 
 
-# Cannot read video new arte tv program API. Blocked by FFMPEG issue #10149
-# @plugin.route('/play_artetv/<program_id>', name='play_artetv')
-# def play_artetv(program_id):
-#     item = api.player_video(settings.language, program_id)
-#     attr = item.get('attributes')
-#     streamUrl=attr.get('streams')[0].get('url')
-#     return plugin.set_resolved_url({'path': streamUrl})
+@plugin.route('/play/<program_id>/<mpaa>', name='play')
+def play(program_id, mpaa):
+    """
+    Play content identified with program_id.
+    """
+    plugin_operate(plugin, 'inputstream.adaptive')
+    synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
+    played_item = None
+    try:
+        played_item = view.build_video_from_program(plugin, settings, program_id)
+    # pylint: disable=broad-exception-caught
+    except Exception as exp:
+        stack_trace = traceback.format_tb(exp.__traceback__)
+        xbmc.log(f"Exception during stream resolution {stack_trace}", xbmc.LOGERROR)
+    if played_item:
+        logger.log_xbmc(played_item, 'play')
+        xbmc.Player().play(played_item.getPath(), played_item)
+        utils.warn_if_age_restricted(plugin, mpaa)
+        synch_during_playback(synched_player)
+    else:
+        xbmc.log("Could not resolve stream...", xbmc.LOGERROR)
+        addon = xbmcaddon.Addon()
+        plugin.notify(addon.getLocalizedString(30029).format(strm=program_id, ln='no'))
+
+    del synched_player
+
+
+@plugin.route('/play/collection/<col_id>/<mpaa>', name='play_collection')
+@plugin.route('/play/collection/<col_id>/<mpaa>/from/<prgm_id>', name='play_collection_from')
+def play_collection(col_id, mpaa, prgm_id=None):
+    """
+    Load a playlist and start playing its first item.
+    """
+    playlist = view.build_playlist_from_collection(plugin, settings, col_id)
+    startpos = playlist['prgm_id_to_pos'].get(prgm_id, False)
+    if not isinstance(startpos, int):
+        startpos = -1
+        prgm_id = playlist['pos_to_prgm_id'][0]
+
+    plugin_operate(plugin, 'inputstream.adaptive')
+    # Start playing with the first playlist item
+    synched_player = Player(
+        user.get_cached_token(plugin, settings.username, True), prgm_id)
+    # try to seek parent collection, when out of the context of playlist creation
+    # Start playing with the first playlist item
+    played_item = view.build_playable_playlist(playlist['collection'])
+    logger.log_xbmc(played_item, 'play_collection')
+    xbmc.Player().play(played_item, startpos=startpos)
+    utils.warn_if_age_restricted(plugin, mpaa)
+    synch_during_playback(synched_player)
+    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
+    del synched_player
 
 
 def synch_during_playback(synched_player):
@@ -189,69 +228,6 @@ def synch_during_playback(synched_player):
         i += 1
         xbmc.sleep(1000)
     synched_player.synch_progress()
-
-
-@plugin.route('/play/<program_id>/<mpaa>', name='play')
-@plugin.route('/play/<program_id>/<mpaa>/<play_from>', name='play_from')
-def play(program_id, mpaa, play_from=PlayFrom.ITM):
-    """
-    Play content identified with program_id.
-    """
-    plugin_operate(plugin, 'inputstream.adaptive')
-    synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
-    # try to seek parent collection, when out of the context of playlist creation
-    sibling_playlist = None
-    if play_from == PlayFrom.LST.value:
-        sibling_playlist = view.build_sibling_playlist_from_program(plugin, settings, program_id)
-    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
-    played_item = None
-    if sibling_playlist is not None and len(sibling_playlist['collection']) > 1:
-        # Start playing with the first playlist item
-        played_item = view.build_playable_playlist(sibling_playlist['collection'])
-        logger.log_xbmc(played_item, 'play')
-        xbmc.Player().play(played_item)
-    else:
-        played_item = None
-        try:
-            played_item = view.build_video_from_program(plugin, settings, program_id)
-        # pylint: disable=broad-exception-caught
-        except Exception as exp:
-            stack_trace = traceback.format_tb(exp.__traceback__)
-            xbmc.log(f"Exception during stream resolution {stack_trace}", xbmc.LOGERROR)
-        if played_item is not None:
-            logger.log_xbmc(played_item, 'play')
-            xbmc.Player().play(played_item.getPath(), played_item)
-        else:
-            xbmc.log("Could not resolve stream...", xbmc.LOGERROR)
-            addon = xbmcaddon.Addon()
-            plugin.notify(addon.getLocalizedString(30029).format(strm=program_id, ln='no'))
-        utils.warn_if_age_restricted(plugin, mpaa)
-
-    synch_during_playback(synched_player)
-    del synched_player
-
-
-@plugin.route('/play_collection/<collection_id>/<mpaa>', name='play_collection')
-def play_collection(collection_id, mpaa):
-    """
-    Load a playlist and start playing its first item.
-    """
-    # playlist = view.build_collection_playlist(plugin, settings, kind, collection_id)
-    playlist = view.build_playlist_from_collection(plugin, settings, collection_id)
-
-    plugin_operate(plugin, 'inputstream.adaptive')
-    # Start playing with the first playlist item
-    synched_player = Player(
-        user.get_cached_token(plugin, settings.username, True),
-        playlist['start_program_id'])
-    # try to seek parent collection, when out of the context of playlist creation
-    # Start playing with the first playlist item
-    played_item = view.build_playable_playlist(playlist['collection'])
-    logger.log_xbmc(played_item, 'play_collection')
-    xbmc.Player().play(played_item)
-    utils.warn_if_age_restricted(plugin, mpaa)
-    synch_during_playback(synched_player)
-    del synched_player
 
 
 def plugin_operate(my_plugin, marking):

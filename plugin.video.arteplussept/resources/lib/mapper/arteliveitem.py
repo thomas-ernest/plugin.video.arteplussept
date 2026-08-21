@@ -6,7 +6,6 @@ import html
 import xbmcgui
 from resources.lib import actions
 from resources.lib import utils
-from resources.lib.utils import PlayFrom
 from resources.lib.mapper.arteitem import ArteTvVideoItem
 
 
@@ -62,6 +61,7 @@ class ArteLiveItem(ArteTvVideoItem):
 
         # playing the stream from program id makes the live starts from the beginning
         # while it starts the video like the live tv, with the above
+        prgm_id = meta.get('providerId')
         streams = attr.get('streams', [])
         if len(streams) > 0 and streams[0].get('url'):
             path = streams[0].get('url')
@@ -69,13 +69,11 @@ class ArteLiveItem(ArteTvVideoItem):
             live_item.addContextMenuItems([(
                 self.plugin.addon.getLocalizedString(30060),
                 actions.background(self.plugin.url_for(
-                    'play_from', kind='SHOW', program_id=meta.get('providerId'), mpaa=mpaa,
-                    play_from=PlayFrom.CTX.value))
+                    'play_from', program_id=prgm_id, mpaa=mpaa))
             )])
         else:
             live_item.setPath(self.plugin.url_for(
-                'play_from', kind='SHOW', program_id=meta.get('providerId'), mpaa=mpaa,
-                play_from=PlayFrom.ITM.value)
+                'play_from', program_id=prgm_id, mpaa=mpaa)
             )
 
         return live_item
