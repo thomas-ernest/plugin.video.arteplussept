@@ -188,7 +188,7 @@ class ArteTvVideoItem(ArteVideoItem):
             if kind in self.PREFERED_KINDS:
                 # content_type = Content.PLAYLIST
                 path = self.plugin.url_for(
-                    'play_collection', collection_id=program_id,
+                    'play_collection', col_id=program_id,
                     mpaa=self._get_mpaa_age_rating())
                 is_playable = True
                 additional_context_menu = [(

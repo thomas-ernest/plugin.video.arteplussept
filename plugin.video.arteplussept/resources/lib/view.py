@@ -78,32 +78,6 @@ def mark_as_watched(plugin, usr, program_id, label):
             plugin.notify(msg=msg, image='error')
 
 
-def build_sibling_playlist_from_program(plugin, settings, program_id):
-    """
-    Return a pair with videos belonging to the same parent as program id
-    e.g. other episodes of a same serie, videos around the same topic
-    and the start program id of this collection i.e. program_id
-    """
-    sibling_collection_id = None
-    # get associated collection from arte tv item stats
-    prgm = api.player_video(settings.language, program_id)
-    if prgm:
-        prgm_push = prgm.get('attributes', {}).get('stats', {}).get('push', {})
-        assoc_collects = prgm_push.get('associatedCollection', [])
-        if len(assoc_collects) > 0:
-            for ac in assoc_collects:
-                if isinstance(ac, str) and ac.startswith(("RC-", "PL-")):
-                    sibling_collection_id = ac
-
-    # if a parent was found, then return the list of kodi playable dict.
-    playlist = None
-    if sibling_collection_id:
-        playlist = build_playlist_from_collection(plugin, settings, sibling_collection_id)
-        if playlist:
-            playlist['start_program_id'] = program_id
-    return playlist
-
-
 def build_menu_from_collection(plugin, settings, collection_id):
     """
     Build a playlist from artetv playlist api with multi lang streams
@@ -120,22 +94,32 @@ def build_menu_from_collection(plugin, settings, collection_id):
     return menu
 
 
-def build_playlist_from_collection(plugin, settings, collection_id):
+def build_playlist_from_collection(plugin, settings, collection_id, menu=False):
     """
     Build a playlist from artetv playlist api with multi lang streams
     """
     playlist = api.playlist_collection(settings.language, collection_id)
     collection = []
-    first_prgm_id = None
+    prgm_id_to_pos = {}
+    pos_to_prgm_id = []
     for pl_prgm in playlist.get('attributes', {}).get('items', {}):
         prgm_id = pl_prgm.get('providerId', None)
         if prgm_id:
-            prgm_itm = mapper.build_video_from_program(plugin, settings, prgm_id)
+            col_id_if_menu = collection_id if menu else None
+            prgm_itm = mapper.build_video_from_program(plugin, settings, prgm_id, col_id_if_menu)
             if prgm_itm:
                 collection.append(prgm_itm)
-                if first_prgm_id is None:
-                    first_prgm_id = prgm_id
-    return {'collection': collection, 'start_program_id': first_prgm_id}
+                pos = len(pos_to_prgm_id)
+                if prgm_id_to_pos.get(prgm_id, False):
+                    xbmc.log(
+                        f"Duplicated program {prgm_id} in playlist {collection_id}",
+                        xbmc.LOGWARNING)
+                prgm_id_to_pos[prgm_id] = pos
+                pos_to_prgm_id.append(prgm_id)
+    return {'collection': collection,
+            'prgm_id_to_pos': prgm_id_to_pos,
+            'pos_to_prgm_id': pos_to_prgm_id
+            }
 
 
 def build_playable_playlist(playlist):
