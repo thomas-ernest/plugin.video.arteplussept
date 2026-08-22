@@ -70,10 +70,11 @@ def build_api_category(plugin, category_code, settings):
     return category
 
 
-def get_cached_category(zone_id, cached_categories):
+def get_cached_category(plugin, settings, zone_id, cached_categories):
     """Return the menu for a category that is stored
-    in cache from previous api call like home page"""
-    return cached_categories[zone_id]
+    in cache from previous api call like home page.
+    The cache is refreshed with an API call, when the entry expired or was never cached."""
+    return ArteZone(plugin, settings, cached_categories).get_cached_item(zone_id)
 
 
 def mark_as_watched(plugin, usr, program_id, label):

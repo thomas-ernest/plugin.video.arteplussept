@@ -83,7 +83,7 @@ def display_cached_category(zone_id):
     """Display the menu for a category that is stored
     in cache from previous api call like home page"""
     lst_itms = view.get_cached_category(
-        zone_id, plugin.get_storage('cached_categories', TTL=60))
+        plugin, settings, zone_id, plugin.get_storage('cached_categories', TTL=60))
     logger.log_xbmc(lst_itms, 'cached_category')
     return lst_itms
 
