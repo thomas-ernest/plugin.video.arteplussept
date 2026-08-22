@@ -195,7 +195,7 @@ class ArteTvVideoItem(ArteVideoItem):
                     'is_playable': is_playable,
                     'info_type': 'video',
                     'properties': {
-                        'farnart_image': self._get_image_url('1920x1080', False)
+                        'fanart_image': self._get_image_url('1920x1080', False)
                     }
                 }
             # else abort, unable to build an item for an external link
