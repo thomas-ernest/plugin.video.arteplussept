@@ -1,5 +1,6 @@
 """Main module for Kodi add-on plugin.video.arteplussept"""
 
+from datetime import date
 import xbmcaddon
 import xbmcgui
 # pylint: disable=import-error
@@ -18,10 +19,9 @@ from resources.lib.settings import Settings
 from resources.lib import utils
 from resources.lib.utils import PlayFrom
 
-# global declarations
-# plugin stuff
-plugin = Plugin()
+DATE_FORMAT = "%Y-%m-%d"
 
+plugin = Plugin()
 settings = Settings(plugin)
 
 
@@ -34,18 +34,40 @@ def display_index():
     addon = xbmcaddon.Addon()
     current_version = addon.getAddonInfo("version")
     last_version = addon.getSetting("last_version_notified")
+    last_date = addon.getSetting("last_date_notified")
 
-    if last_version != current_version:
+    if last_version != current_version or days_since(last_date) >= 30:
         xbmcgui.Dialog().ok(
             addon.getLocalizedString(30061).format(version=current_version),
             addon.getLocalizedString(30062).format(version=current_version)
         )
-        addon.setSetting("last_info_version", current_version)
+        addon.setSetting("last_version_notified", current_version)
+        addon.setSetting("last_date_notified", date.today().strftime(DATE_FORMAT))
 
     lst_itms = view.build_home_page(
         plugin, settings, plugin.get_storage('cached_categories', TTL=60))
     logger.log_xbmc(lst_itms, 'index')
     return lst_itms
+
+
+def days_since(date_str):
+    """
+    date_str: '2026-08-14' or '' (empty)
+    Returns number of days between today and date_str.
+    If empty → MAX_INT.
+    """
+
+    if not date_str:
+        return 1000000
+
+    try:
+        other = date.fromisoformat(date_str)
+    except ValueError:
+        # invalid format, not a date
+        return 1000000
+
+    today = date.today()
+    return (today - other).days
 
 
 @plugin.route('/category/api/<category_code>', name='api_category')
