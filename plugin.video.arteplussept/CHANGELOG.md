@@ -1,3 +1,10 @@
+v1.6.1 (2026-8-22)
+
+Add support for external page items and fix frequency of update disclamer
+
+- external pages are list of zones - new item &quot;Categories et genre&quot; in main menu.
+- Fix disclamer with link for issues and donations on version update or every 30d.
+
 v1.6.0 (2026-7-30)
 
 Add easier auth for smart tv with device flow
