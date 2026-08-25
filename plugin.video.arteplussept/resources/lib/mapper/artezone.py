@@ -42,6 +42,10 @@ class ArteZone(ArteCollection):
                 item_kind = (item or {}).get("kind", {}).get("code")
                 if item_kind != 'EXTERNAL':
                     valid_count = valid_count + 1
+                else:
+                    dplnk = item.get('deeplink', '')
+                    if isinstance(dplnk, str) and dplnk.strip() != "" and dplnk.rsplit("/", 1)[-1]:
+                        valid_count = valid_count + 1
             # if there is not at least one valid item, them zone is not valid
             return valid_count >= 1
         # we cannot be sure it is valid or not, we don't know what it contains

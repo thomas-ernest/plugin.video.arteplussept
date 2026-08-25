@@ -2,7 +2,7 @@
 
 # fix sync with arte tv during video playback
 # add a screenshot for multi lang
-# add page navigation from #74
+# some item behind raw page display empty menu
 
 from datetime import date
 import traceback
@@ -84,7 +84,6 @@ def display_category_page(zone_id, page, page_id):
 def display_raw_page(category):
     """Display the menu for a category that needs an api call"""
     lst_itms = view.build_page(plugin, settings, category)
-    xbmc.log(f"all my lst_itms {lst_itms}", xbmc.LOGWARNING)
     logger.log_xbmc(lst_itms, 'raw_page')
     return lst_itms
 

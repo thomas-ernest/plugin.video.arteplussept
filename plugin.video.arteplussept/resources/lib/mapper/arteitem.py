@@ -170,17 +170,13 @@ class ArteTvVideoItem(ArteVideoItem):
             if deeplink is not None and deeplink.strip() != "":
                 category = deeplink.rsplit("/", 1)[-1]
                 path = self.plugin.url_for('raw_page', category=category)
-                is_playable = False
-                return {
-                    'label': item.get('title'),
-                    'path': path,
-                    'thumbnail': self._get_image_url('480x270', True),
-                    'is_playable': is_playable,
-                    'info_type': 'video',
-                    'properties': {
-                        'fanart_image': self._get_image_url('1920x1080', False)
-                    }
-                }
+                li = xbmcgui.ListItem(label=item.get('title'), path=path)
+                li.setProperty('is_playable', str(False))
+                li.setArt({
+                    'thumb': self._get_image_url('480x270', True),
+                    'fanart': self._get_image_url('1920x1080', False)
+                })
+                return li
             # else abort, unable to build an item for an external link
             return None
 
@@ -257,7 +253,7 @@ class ArteTvVideoItem(ArteVideoItem):
             prop_prefix = 'manifest'
         prop = f"{ia_name}.{prop_prefix}_headers"
         # li.setProperty(prop, f"User-Agent=(Windows NT 10.0; Win64; x64; rv:150.0)")
-        li.setProperty(prop, "User-Agent=Arte +7/1.6.0")
+        li.setProperty(prop, "User-Agent=Arte +7/1.6.1")
         return li
 
     def _get_mpaa_age_rating(self):
