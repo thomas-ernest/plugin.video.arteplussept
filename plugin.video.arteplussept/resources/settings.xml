@@ -9,17 +9,6 @@
 			values="fr|de|en|es|pl|it|ro"
 			default="0"/>
 		<setting
-			id="quality"
-			type="enum"
-			label="30052"
-			values="Low|Medium|High"
-			default="2"/>
-		<setting
-			id="show_video_streams"
-			type="bool"
-			label="30053"
-			default="false"/>
-		<setting
 			id="loglevel"
 			type="enum"
 			label="30056"
