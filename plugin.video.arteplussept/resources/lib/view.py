@@ -24,7 +24,6 @@ def build_home_page(plugin, settings):
     # pylint: disable=broad-exception-caught
     except Exception as error:
         xbmc.log("Unable to build live stream item with " +
-                 f"lang:{settings.language} quality:{settings.quality} " +
                  f"because \"{str(error)}\"",
                  level=xbmc.LOGERROR)
 
@@ -37,7 +36,6 @@ def build_home_page(plugin, settings):
     # pylint: disable=broad-exception-caught
     except Exception as error:
         xbmc.log("Unable to build home items with " +
-                 f"lang:{settings.language} quality:{settings.quality} " +
                  f"because \"{str(error)}\"",
                  level=xbmc.LOGERROR)
 
