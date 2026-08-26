@@ -1,9 +1,5 @@
 """Main module for Kodi add-on plugin.video.arteplussept"""
 
-# fix sync with arte tv during video playback
-# add a screenshot for multi lang
-# some item behind raw page display empty menu
-
 from datetime import date
 import traceback
 import json
@@ -155,6 +151,7 @@ def display_collection(program_id):
 def play_live(stream_url, mpaa):
     """Play live content."""
     utils.warn_if_age_restricted(plugin, mpaa)
+    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
     xbmc.Player().play(stream_url)
 
 
@@ -174,6 +171,7 @@ def play(program_id, mpaa):
         xbmc.log(f"Exception during stream resolution {stack_trace}", xbmc.LOGERROR)
     if played_item:
         logger.log_xbmc(played_item, 'play')
+        xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
         xbmc.Player().play(played_item.getPath(), played_item)
         utils.warn_if_age_restricted(plugin, mpaa)
         synch_during_playback(synched_player)

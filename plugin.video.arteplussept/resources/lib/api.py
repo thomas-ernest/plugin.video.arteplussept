@@ -5,9 +5,7 @@ import requests
 # pylint: disable=import-error
 import xbmc
 from resources.lib import logger
-
-_PLUGIN_NAME = "Arte +7"
-_PLUGIN_VERSION = "1.6.1"
+from resources.lib.utils import ADDON_USERAGENT
 
 
 # Arte TV API - Used on Arte TV website
@@ -62,10 +60,10 @@ ARTETV_ENDPOINTS = {
     'login': '/login',
 }
 LIGHT_HEADERS = {
-    'user-agent': f"{_PLUGIN_NAME}/{_PLUGIN_VERSION}"
+    'user-agent': ADDON_USERAGENT
 }
 ARTETV_HEADERS = {
-    'user-agent': f"{_PLUGIN_NAME}/{_PLUGIN_VERSION}",
+    'user-agent': ADDON_USERAGENT,
     # required to use token endpoint
     'authorization': 'I6k2z58YGO08P1X0E8A7VBOjDxr8Lecg',
     # required for Arte TV API. values like web, app, tv, orange, free

@@ -4,6 +4,10 @@
 """
 import urllib.parse
 
+_PLUGIN_NAME = "Arte +7"
+_PLUGIN_VERSION = "1.6.1"
+ADDON_USERAGENT = f"{_PLUGIN_NAME}/{_PLUGIN_VERSION}"
+
 
 def encode_string(string):
     """Return escaped string to be used as URL. More details in

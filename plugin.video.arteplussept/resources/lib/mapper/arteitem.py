@@ -253,7 +253,7 @@ class ArteTvVideoItem(ArteVideoItem):
             prop_prefix = 'manifest'
         prop = f"{ia_name}.{prop_prefix}_headers"
         # li.setProperty(prop, f"User-Agent=(Windows NT 10.0; Win64; x64; rv:150.0)")
-        li.setProperty(prop, "User-Agent=Arte +7/1.6.1")
+        li.setProperty(prop, utils.ADDON_USERAGENT)
         return li
 
     def _get_mpaa_age_rating(self):

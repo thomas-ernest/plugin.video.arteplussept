@@ -6,27 +6,27 @@
 
 ## Description
 
-Plugin "plugin.video.arteplussept" to watch Arte content on Kodi (ex XBMC).
-Can be used without or with Arte account in order to benefit from a better cross-device experience. For instance starting a video or a serie on the mobile app and resume it on kodi.
+Plugin "plugin.video.arteplussept" to browse Arte content and watch it in multiple languages and subtitles on Kodi (ex XBMC).
+Can be used without or with Arte account in order to benefit from a better cross-device experience. For instance starting a video or a serie on the mobile app and resume it on kodi or to share same favorites.
 
 ### Features
 
 - Browse and watch Arte replays
 - Watch Arte live stream
+- Watch Arte content in multiple languages and subtibles
 - Search for content on Arte
 - Browse or search multi-page content
 - Play serie as a playlist or browse serie as a menu.
 - Resume a serie from the first not completed episode thanks to Arte history (login required)
 - Load serie as a playlist, when watching one of its episode
 - Login with your Arte account without storing password on filesystem - only the token 
-- Resume videos from where you stopped them (cross device) (login required)
+- Login with basic (user password) or device flow authentication method
 - Manage - view or purge - your Arte history (login required)
 - Manage - view, add, delete or purge - your Arte favorites (login required)
 - Supported language : DE, EN, FR, IT, PL, RO
 
 ### Not (very well) supported
-- Multiple language content
-- Subtitles
+- Resume videos from where you stopped them (cross device) (login required)
 - Geo blocking
 - Display of availability / broadcasting dates
 
@@ -53,18 +53,19 @@ Kodi is installed on a different path according to the operating system it is in
 ### 2. Dowload the addon
 
 In Kodi addons folder
-- clone this repository or one of if its forks (preferred) and move source to plugin folder
+- clone this repository or one of if its forks (preferred) and copy source to plugin folder
   - `git clone https://github.com/thomas-ernest/plugin.video.arteplussept.git`
-  - `mv plugin.video.arteplussept/plugin.video.arteplussept plugin.video.arteplussept`
+  - `cp plugin.video.arteplussept/plugin.video.arteplussept $KODI_HOME/addons/`
 - or download the plugin :
   - [any release](https://github.com/thomas-ernest/plugin.video.arteplussept/releases)
   - [latest commit on master](https://github.com/thomas-ernest/plugin.video.arteplussept/archive/refs/heads/master.zip)
+  - use Kodi UI to install from zip
 
 ### 3. Install the addon
 
-- If you downloaded a zip, extract the content of the zip in the `addons` folder.
+- If you downloaded a zip, extract the content of the zip in the `$KODI_HOME/addons` folder.
 - Make sure that the addon is in folder `plugin.video.arteplussept` (and not `plugin.video.arteplussept-master` if you downloaded the latest commit of master for instance or in 
-`plugin.video.arteplussept/plugin.video.arteplussept` if you missed the mv operation).
+`plugin.video.arteplussept/plugin.video.arteplussept` if you missed the mv or cp operation).
 
 For instance for Linux:
 ```
@@ -142,6 +143,8 @@ Steps run automatically by CI, with troubleshooting guide.
 
 ## Testing
 
+Failing the major migration out of xbmcswift2 and HBB TV API, component tests are broken.
+
 1.  **Install dependencies**:
     ```bash
     pip install -r requirements-test.txt
@@ -160,78 +163,156 @@ various docs and examples
 
 ## Route graph
 
-The Mermaid graph below is a conceptual view of the main routes defined in plugin.py. Each node is a route, with menu/list-item routes shown in blue, video playback routes in green, and background actions in orange. Bidirectional edges represent navigation from a list item to another route, while one-way edges represent context-menu actions or direct plugin URL navigation. Playback-related edges are shown as bidirectional links when a menu item can lead to a play route and the play route can return to the originating menu context.
+Previous conceptual route graph, from before the major migration. Menu/list-item routes are blue, video playback routes are green, and background actions are orange.
 
 ```mermaid
 graph LR
-    index["index (menu)"]
-    api_category["api_category (menu)"]
-    cached_category["cached_category (menu)"]
-    category_page["category_page (menu)"]
-    favorites_default["favorites_default (menu)"]
-    favorites["favorites (menu)"]
-    add_favorite["add_favorite (action)"]
-    remove_favorite["remove_favorite (action)"]
-    purge_favorites["purge_favorites (action)"]
-    mark_as_watched["mark_as_watched (action)"]
-    last_viewed_default["last_viewed_default (menu)"]
-    last_viewed["last_viewed (menu)"]
-    purge_last_viewed["purge_last_viewed (action)"]
-    collection["collection (menu)"]
-    streams["streams (menu)"]
-    play_live["play_live (video)"]
-    play["play (video)"]
-    play_from["play_from (video)"]
-    play_specific["play_specific (video)"]
-    play_collection["play_collection (video)"]
-    init_search["init_search (menu)"]
-    search["search (menu)"]
-    user_login["user_login (action)"]
-    user_logout["user_logout (action)"]
+  index["index (menu)"]
+  api_category["api_category (menu)"]
+  cached_category["cached_category (menu)"]
+  category_page["category_page (menu)"]
+  favorites_default["favorites_default (menu)"]
+  favorites["favorites (menu)"]
+  add_favorite["add_favorite (action)"]
+  remove_favorite["remove_favorite (action)"]
+  purge_favorites["purge_favorites (action)"]
+  mark_as_watched["mark_as_watched (action)"]
+  last_viewed_default["last_viewed_default (menu)"]
+  last_viewed["last_viewed (menu)"]
+  purge_last_viewed["purge_last_viewed (action)"]
+  collection["collection (menu)"]
+  streams["streams (menu)"]
+  play_live["play_live (video)"]
+  play["play (video)"]
+  play_from["play_from (video)"]
+  play_specific["play_specific (video)"]
+  play_collection["play_collection (video)"]
+  init_search["init_search (menu)"]
+  search["search (menu)"]
+  user_login["user_login (action)"]
+  user_logout["user_logout (action)"]
 
-    index <--> api_category
-    index <--> cached_category
-    index <--> category_page
-    index <--> favorites_default
-    index <--> last_viewed_default
-    index <--> collection
-    index <--> streams
-    index <--> init_search
-    index <--> user_login
-    index <--> user_logout
+  index <--> api_category
+  index <--> cached_category
+  index <--> category_page
+  index <--> favorites_default
+  index <--> last_viewed_default
+  index <--> collection
+  index <--> init_search
+  index <--> user_login
+  index <--> user_logout
 
-    favorites_default <--> favorites
-    favorites -->|if authenticated| add_favorite
-    favorites -->|if authenticated| remove_favorite
-    favorites -->|if authenticated| purge_favorites
-    favorites -->|if authenticated| mark_as_watched
+  favorites_default <--> favorites
+  favorites -->|if authenticated| add_favorite
+  favorites -->|if authenticated| remove_favorite
+  favorites -->|if authenticated| purge_favorites
+  favorites -->|if authenticated| mark_as_watched
 
-    last_viewed_default <--> last_viewed
-    last_viewed -->|if authenticated| purge_last_viewed
+  last_viewed_default <--> last_viewed
+  last_viewed -->|if authenticated| purge_last_viewed
 
-    collection <-->|if playable item| play
-    collection <-->|if playable item| play_from
-    collection <-->|if playable item| play_specific
-    collection <-->|if collection item| play_collection
-    streams <-->|if playable item| play
-    streams <-->|if live stream| play_live
-    favorites <-->|if playable item| play
-    favorites <-->|if playable item| play_from
-    favorites <-->|if playable item| play_specific
-    favorites <-->|if collection item| play_collection
-    search <-->|if playable item| play
-    search <-->|if playable item| play_from
-    search <-->|if playable item| play_specific
-    search <-->|if collection item| play_collection
-    play -->|play context| play_from
-    play_from -->|audio selection| play_specific
-    init_search -->|search results| search
+  collection <-->|if playable item| play
+  collection <-->|if playable item| play_from
+  collection <-->|if playable item| play_specific
+  collection <-->|if collection item| play_collection
+  collection <--> streams
+  streams <-->|if playable item| play
+  favorites <-->|if playable item| play
+  favorites <-->|if playable item| play_from
+  favorites <-->|if playable item| play_specific
+  favorites <-->|if collection item| play_collection
+  search <-->|if playable item| play
+  search <-->|if playable item| play_from
+  search <-->|if playable item| play_specific
+  search <-->|if collection item| play_collection
+  play -->|play context| play_from
+  play_from -->|audio selection| play_specific
+  init_search -->|search results| search
 
-    classDef menu fill:#dbeafe,stroke:#1d4ed8,color:#0f172a;
-    classDef video fill:#dcfce7,stroke:#16a34a,color:#052e16;
-    classDef action fill:#fef3c7,stroke:#d97706,color:#451a03;
+  classDef menu fill:#dbeafe,stroke:#1d4ed8,color:#0f172a;
+  classDef video fill:#dcfce7,stroke:#16a34a,color:#052e16;
+  classDef action fill:#fef3c7,stroke:#d97706,color:#451a03;
 
-    class index,api_category,cached_category,category_page,favorites_default,favorites,last_viewed_default,last_viewed,collection,streams,init_search,search menu;
-    class play_live,play,play_from,play_specific,play_collection video;
-    class add_favorite,remove_favorite,purge_favorites,mark_as_watched,purge_last_viewed,user_login,user_logout action;
+  class index,api_category,cached_category,category_page,favorites_default,favorites,last_viewed_default,last_viewed,collection,streams,init_search,search menu;
+  class play_live,play,play_from,play_specific,play_collection video;
+  class add_favorite,remove_favorite,purge_favorites,mark_as_watched,purge_last_viewed,user_login,user_logout action;
+```
+
+Current route graph, based on the routes defined in `plugin.py`. Menu/list-item routes are blue, video playback routes are green, and background or context-menu actions are orange. Bidirectional edges represent navigation from a menu item to another route and return to the originating menu context. One-way edges represent context-menu actions or direct plugin URL navigation.
+
+```mermaid
+graph LR
+  index["/ (index, menu)"]
+  category_page["/category/page/... (category_page, menu)"]
+  raw_page["/raw_page/... (raw_page, menu)"]
+  favorites_default["/favorites (favorites_default, menu)"]
+  favorites["/favorites/<page> (favorites, menu)"]
+  last_viewed_default["/last_viewed (last_viewed_default, menu)"]
+  last_viewed["/last_viewed/<page> (last_viewed, menu)"]
+  collection["/collection/<program_id> (collection, menu)"]
+  init_search["/search (init_search, menu)"]
+  search["/search/<zone_id>/<page>/<query> (search, menu)"]
+  play_live["/play/live/... (play_live, video)"]
+  play["/play/<program_id>/... (play, video)"]
+  play_collection["/play/collection/<col_id>/... (play_collection, video)"]
+  play_collection_from["/play/collection/<col_id>/.../from/<prgm_id> (play_collection_from, video)"]
+  add_favorite["/add_favorite/... (add_favorite, action)"]
+  remove_favorite["/remove_favorite/... (remove_favorite, action)"]
+  purge_favorites["/purge_favorites (purge_favorites, action)"]
+  mark_as_watched["/mark_as_watched/... (mark_as_watched, action)"]
+  purge_last_viewed["/purge_last_viewed (purge_last_viewed, action)"]
+  user_login["/user/login (user_login, action)"]
+  user_logout["/user/logout (user_logout, action)"]
+
+  index <--> category_page
+  index <--> favorites_default
+  index <--> last_viewed_default
+  index <--> init_search
+  index <-->|live item| play_live
+  index -->|login menu action| user_login
+  index -->|logout menu action| user_logout
+
+  category_page <--> category_page
+  category_page -->|external category| raw_page
+  category_page <-->|video item| play
+  category_page <-->|collection item| collection
+  category_page <-->|collection playlist| play_collection
+
+  favorites_default <--> favorites
+  favorites <--> favorites
+  favorites <-->|video item| play
+  favorites <-->|collection item| collection
+  favorites <-->|collection playlist| play_collection
+  favorites -->|context menu| add_favorite
+  favorites -->|context menu| remove_favorite
+  favorites -->|context menu| mark_as_watched
+  favorites -->|purge action| purge_favorites
+
+  last_viewed_default <--> last_viewed
+  last_viewed <--> last_viewed
+  last_viewed <-->|video item| play
+  last_viewed <-->|collection item| collection
+  last_viewed <-->|collection playlist| play_collection
+  last_viewed -->|purge action| purge_last_viewed
+
+  raw_page <-->|video item| play
+  raw_page <-->|collection item| collection
+  raw_page <-->|collection playlist| play_collection
+  collection <-->|video item| play
+  collection <-->|playlist from selected item| play_collection_from
+  collection <-->|collection item| collection
+
+  init_search <--> search
+  search <--> search
+  search <-->|video item| play
+  search <-->|collection item| collection
+  search <-->|collection playlist| play_collection
+
+  classDef menu fill:#dbeafe,stroke:#2563eb,color:#172554;
+  classDef video fill:#dcfce7,stroke:#16a34a,color:#14532d;
+  classDef action fill:#ffedd5,stroke:#ea580c,color:#7c2d12;
+
+  class index,category_page,raw_page,favorites_default,favorites,last_viewed_default,last_viewed,collection,init_search,search menu;
+  class play_live,play,play_collection,play_collection_from video;
+  class add_favorite,remove_favorite,purge_favorites,mark_as_watched,purge_last_viewed,user_login,user_logout action;
 ```

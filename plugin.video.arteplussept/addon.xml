@@ -58,6 +58,7 @@ Thank you jcosmao for fixing mis cache error when displaying category 60min afte
             <screenshot>resources/screenshot-1.png</screenshot>
             <screenshot>resources/screenshot-2.png</screenshot>
             <screenshot>resources/screenshot-3.png</screenshot>
+            <screenshot>resources/screenshot-4.png</screenshot>
         </assets>
     </extension>
 </addon>
