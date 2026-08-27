@@ -94,7 +94,7 @@ If you are having issues with the add-on, you can open a issue and join your log
 
 ## Coding
 
-- Compatible with python 3 only and Kodi Matrix (based on Python 3.8) since version 1.1.5
+- Compatible with python 3 only and Kodi Omega (based on Python 3.11) since version 2.0.0.
 - Coding guideline :
   - 4 space indentation. No tab.
   - Snake case for variables and methods
@@ -134,7 +134,7 @@ Steps run automatically by CI, with troubleshooting guide.
 - "Kodi Addon-Submitter" in CI is in charge of:
     - creating a GitHub release with version $MAJOR.$MINOR.$BUGFIX in https://github.com/thomas-ernest/plugin.video.arteplussept/releases
     - submitting a new version to official Kodi repository
-        - One-commit change in matrix branch https://kodi.wiki/view/Submitting_Add-ons
+        - One-commit change in omega branch https://kodi.wiki/view/Submitting_Add-ons
         - Open pull-request to official repo https://github.com/xbmc/repo-plugins/pulls
 - if the action "Kodi Addon-Submitter" in CI  fails, refresh the token value in action secret.
     - In https://github.com/settings/tokens/ generate a corsed-grained token KODI_SUBMITTER_TOKEN_CLASSIC and copy its value

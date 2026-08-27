@@ -47,7 +47,7 @@ find . -type d -name .pytest_cache -exec rm -rf {} +
 
 echo "==> Running kodi-addon-checker on addon root..."
 export PYTHON_SCRIPT="$HOME/AppData/Roaming/Python/Python${PYTHON_VERSION//./}/Scripts"
-$PYTHON_SCRIPT/kodi-addon-checker --branch=matrix ./plugin.video.arteplussept
+$PYTHON_SCRIPT/kodi-addon-checker --branch=omega ./plugin.video.arteplussept
 
 # -----------------------------
 # RUN PYLINT

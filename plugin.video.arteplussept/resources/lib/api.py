@@ -2,7 +2,6 @@
 from collections import OrderedDict
 # pylint: disable=import-error
 import requests
-# pylint: disable=import-error
 import xbmc
 from resources.lib import logger
 from resources.lib.utils import ADDON_USERAGENT
