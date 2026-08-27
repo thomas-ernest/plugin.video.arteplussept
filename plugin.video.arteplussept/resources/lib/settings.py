@@ -16,8 +16,8 @@ class Settings:
         self.language = languages[lang_idx]
         # Arte TV user name
         # defaults to empty string to return false with if not str
-        self.username = plugin.addon.getSetting(
-            'user_email') or ""
+        self.username = plugin.addon.getSettingString(
+            'username') or ""
         # Enable additional logs managed by plugin: API and display object traces
         loglevel_key_idx = plugin.addon.getSettingInt('loglevel') or 0
         self.loglevel = loglevel[list(loglevel.keys())[loglevel_key_idx]]

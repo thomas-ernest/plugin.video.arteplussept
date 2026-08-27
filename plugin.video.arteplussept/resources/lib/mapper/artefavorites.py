@@ -2,7 +2,6 @@
 Module for Arte Favorites
 """
 
-# pylint: disable=import-error
 import xbmcgui
 from resources.lib import api
 from resources.lib import user

@@ -3,7 +3,6 @@ Various Arte items : basic Arte item, Arte Colleciton, Arte Live Item, etc..
 """
 import html
 import datetime
-# pylint: disable=import-error
 import xbmc
 import xbmcgui
 from resources.lib import actions

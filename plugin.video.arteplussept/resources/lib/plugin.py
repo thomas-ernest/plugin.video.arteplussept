@@ -6,7 +6,6 @@ import json
 
 import xbmcaddon
 import xbmcgui
-# pylint: disable=import-error
 import xbmc
 
 from resources.lib import logger
@@ -48,6 +47,7 @@ def display_index():
 
     lst_itms = mapper.build_home_page(plugin, settings)
     logger.log_xbmc(lst_itms, 'index')
+    user.update_login_state_settings(plugin, settings.username)
     return lst_itms
 
 
@@ -293,7 +293,7 @@ def user_login():
 @plugin.route('/user/logout', name='/user/logout')
 def user_logout():
     """Discard token of user in settings."""
-    return user.logout(plugin, settings)
+    return user.logout(plugin)
 
 
 # plugin bootstrap

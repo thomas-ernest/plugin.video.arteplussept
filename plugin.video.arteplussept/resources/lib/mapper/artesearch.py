@@ -2,7 +2,6 @@
 Module for Arte Search
 """
 
-# pylint: disable=import-error
 import xbmc
 import xbmcgui
 from resources.lib import api

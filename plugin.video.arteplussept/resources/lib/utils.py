@@ -5,7 +5,7 @@
 import urllib.parse
 
 _PLUGIN_NAME = "Arte +7"
-_PLUGIN_VERSION = "1.6.1"
+_PLUGIN_VERSION = "1.6.2"
 ADDON_USERAGENT = f"{_PLUGIN_NAME}/{_PLUGIN_VERSION}"
 
 
