@@ -50,3 +50,23 @@ class ArteHistory(ArteCollection):
                 else:
                     self.plugin.notify(
                         msg=self.plugin.addon.getLocalizedString(30032), image='error')
+
+    def mark_as_watched(self, program_id, label):
+        """
+        Get program duration and synch progress with total duration
+        in order to mark a program as watched
+        """
+        status = -1
+        lang = self.settings.languages[0]
+        usr = self.settings.username
+        program_info = api.player_video(lang, program_id)
+        total_time = program_info.get('attributes').get('metadata').get('duration').get('seconds')
+        auth_token = user.get_cached_token(self.plugin, usr)
+        if auth_token:
+            status = api.sync_last_viewed(auth_token, program_id, total_time)
+            if 200 == status:
+                msg = self.plugin.addon.getLocalizedString(30036).format(label=label)
+                self.plugin.notify(msg=msg, image='info')
+            else:
+                msg = self.plugin.addon.getLocalizedString(30037).format(label=label)
+                self.plugin.notify(msg=msg, image='error')

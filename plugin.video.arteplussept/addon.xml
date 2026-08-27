@@ -2,7 +2,7 @@
 <addon id="plugin.video.arteplussept" name="Arte +7" version="1.6.2" provider-name="bmf, thomas-ernest">
     <!-- https://kodi.wiki/view/Addon.xml -->
     <requires>
-        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="xbmc.python" version="3.0.1"/>
         <import addon="script.module.requests" version="2.22.0"/>
         <import addon="script.module.dateutil" version="2.8.1"/>
         <import addon="inputstream.adaptive" version="19.0.7"/>

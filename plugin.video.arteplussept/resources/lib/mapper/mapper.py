@@ -1,11 +1,12 @@
 """Map JSON API outputs into playable content and menus for Kodi"""
-# pylint: disable=import-error
 import xbmc
 from resources.lib import api
 from resources.lib.mapper.arteitem import ArteTvVideoItem
 from resources.lib.mapper.artezone import ArteZone
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
+from resources.lib.mapper.arteliveitem import ArteLiveItem
+from resources.lib.mapper.artesearch import ArteSearch
 
 
 def build_video_from_program(plugin, settings, prgm_id, col_id=None):
@@ -68,3 +69,104 @@ def get_authenticated_content_type(artetv_zone):
     if not isinstance(artetv_zone.get('authenticatedContent'), dict):
         return None
     return artetv_zone.get('authenticatedContent', {}).get('contentId', None)
+
+
+def build_home_page(plugin, settings):
+    """Display home menu based on fixed entries and then content from API home page"""
+    addon_menu = [
+        ArteSearch(plugin, settings).build_item()
+    ]
+    try:
+        addon_menu.append(
+            ArteLiveItem(plugin, api.player_video(settings.language, 'LIVE'))
+            .build_item_live())
+    # pylint: disable=broad-exception-caught
+    except Exception as error:
+        xbmc.log("Unable to build live stream item with " +
+                 f"because \"{str(error)}\"",
+                 level=xbmc.LOGERROR)
+
+    try:
+        arte_home = api.page_content(settings.language)
+        for zone in arte_home.get('zones'):
+            menu_item = map_zone_to_item(plugin, settings, zone)
+            if menu_item:
+                addon_menu.append(menu_item)
+    # pylint: disable=broad-exception-caught
+    except Exception as error:
+        xbmc.log("Unable to build home items with " +
+                 f"because \"{str(error)}\"",
+                 level=xbmc.LOGERROR)
+
+    return addon_menu
+
+
+def build_page(plugin, settings, category):
+    """
+    Build a page for a category like SER, CIN, DOR...
+    A page is a list of zones.
+    To be extended to HOME.
+    """
+    page = api.page_content(settings.language, category)
+    page_menu = []
+    for zone in page.get('zones', []):
+        page_item = ArteZone(plugin, settings).build_item(zone)
+        if page_item:
+            page_menu.append(page_item)
+    return page_menu
+
+
+def build_menu_from_collection(plugin, settings, collection_id):
+    """
+    Build a playlist from artetv playlist api with multi lang streams
+    """
+    playlist = api.playlist_collection(settings.language, collection_id)
+    menu = []
+    for pl_prgm in playlist.get('attributes', {}).get('items', {}):
+        prgm_id = pl_prgm.get('providerId', None)
+        if prgm_id:
+            path = plugin.url_for('play', program_id=prgm_id, mpaa='Unknown')
+            li = ArteTvVideoItem(plugin, pl_prgm).build_item(path, True)
+            if li:
+                menu.append(li)
+    return menu
+
+
+def build_playlist_from_collection(plugin, settings, collection_id, menu=False):
+    """
+    Build a playlist from artetv playlist api with multi lang streams
+    """
+    playlist = api.playlist_collection(settings.language, collection_id)
+    collection = []
+    prgm_id_to_pos = {}
+    pos_to_prgm_id = []
+    for pl_prgm in playlist.get('attributes', {}).get('items', {}):
+        prgm_id = pl_prgm.get('providerId', None)
+        if prgm_id:
+            col_id_if_menu = collection_id if menu else None
+            prgm_itm = build_video_from_program(plugin, settings, prgm_id, col_id_if_menu)
+            if prgm_itm:
+                collection.append(prgm_itm)
+                pos = len(pos_to_prgm_id)
+                if prgm_id_to_pos.get(prgm_id, False):
+                    xbmc.log(
+                        f"Duplicated program {prgm_id} in playlist {collection_id}",
+                        xbmc.LOGWARNING)
+                prgm_id_to_pos[prgm_id] = pos
+                pos_to_prgm_id.append(prgm_id)
+    return {'collection': collection,
+            'prgm_id_to_pos': prgm_id_to_pos,
+            'pos_to_prgm_id': pos_to_prgm_id
+            }
+
+
+def build_playable_playlist(playlist):
+    """
+    Convert a list of listitem into a playable video playlist
+    """
+    # Empty playlist, otherwise requested video is present twice in the playlist
+    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
+    pl = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+    for item in playlist or []:
+        pl.add(item.getPath(), item)
+    return pl

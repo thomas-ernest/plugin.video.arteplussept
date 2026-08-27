@@ -12,7 +12,7 @@ import xbmc
 from resources.lib import logger
 from resources.lib import user
 from resources.lib import utils
-from resources.lib import view
+from resources.lib.mapper import mapper
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
 from resources.lib.mapper.artesearch import ArteSearch
@@ -46,7 +46,7 @@ def display_index():
         addon.setSetting("last_version_notified", current_version)
         addon.setSetting("last_date_notified", date.today().strftime(DATE_FORMAT))
 
-    lst_itms = view.build_home_page(plugin, settings)
+    lst_itms = mapper.build_home_page(plugin, settings)
     logger.log_xbmc(lst_itms, 'index')
     return lst_itms
 
@@ -79,7 +79,7 @@ def display_category_page(zone_id, page, page_id):
 @plugin.route('/raw_page/<category>', name='raw_page')
 def display_raw_page(category):
     """Display the menu for a category that needs an api call"""
-    lst_itms = view.build_page(plugin, settings, category)
+    lst_itms = mapper.build_page(plugin, settings, category)
     logger.log_xbmc(lst_itms, 'raw_page')
     return lst_itms
 
@@ -115,14 +115,6 @@ def purge_favroties():
     ArteFavorites(plugin, settings).purge()
 
 
-@plugin.route('/mark_as_watched/<program_id>/<label>', name='mark_as_watched')
-def mark_as_watched(program_id, label):
-    """Mark program as watched in Arte
-    Notify about completion status with label,
-    useful when several operations are requested in parallel."""
-    view.mark_as_watched(plugin, settings.username, program_id, label)
-
-
 @plugin.route('/last_viewed', name='last_viewed_default')
 @plugin.route('/last_viewed/<page>', name='last_viewed')
 def display_last_viewed(page=1):
@@ -138,10 +130,18 @@ def purge_last_viewed():
     ArteHistory(plugin, settings).purge()
 
 
+@plugin.route('/mark_as_watched/<program_id>/<label>', name='mark_as_watched')
+def mark_as_watched(program_id, label):
+    """Mark program as watched in Arte
+    Notify about completion status with label,
+    useful when several operations are requested in parallel."""
+    ArteHistory(plugin, settings).mark_as_watched(program_id, label)
+
+
 @plugin.route('/collection/<program_id>', name='collection')
 def display_collection(program_id):
     """Display menu for collection of content"""
-    lst_itms = view.build_playlist_from_collection(
+    lst_itms = mapper.build_playlist_from_collection(
         plugin, settings, program_id, menu=True)['collection']
     logger.log_xbmc(lst_itms, 'collection')
     return lst_itms
@@ -164,7 +164,7 @@ def play(program_id, mpaa):
     synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
     played_item = None
     try:
-        played_item = view.build_video_from_program(plugin, settings, program_id)
+        played_item = mapper.build_video_from_program(plugin, settings, program_id)
     # pylint: disable=broad-exception-caught
     except Exception as exp:
         stack_trace = traceback.format_tb(exp.__traceback__)
@@ -189,7 +189,7 @@ def play_collection(col_id, mpaa, prgm_id=None):
     """
     Load a playlist and start playing its first item.
     """
-    playlist = view.build_playlist_from_collection(plugin, settings, col_id)
+    playlist = mapper.build_playlist_from_collection(plugin, settings, col_id)
     startpos = playlist['prgm_id_to_pos'].get(prgm_id, False)
     if not isinstance(startpos, int):
         startpos = -1
@@ -201,7 +201,7 @@ def play_collection(col_id, mpaa, prgm_id=None):
         user.get_cached_token(plugin, settings.username, True), prgm_id)
     # try to seek parent collection, when out of the context of playlist creation
     # Start playing with the first playlist item
-    played_item = view.build_playable_playlist(playlist['collection'])
+    played_item = mapper.build_playable_playlist(playlist['collection'])
     logger.log_xbmc(played_item, 'play_collection')
     xbmc.Player().play(played_item, startpos=startpos)
     utils.warn_if_age_restricted(plugin, mpaa)
