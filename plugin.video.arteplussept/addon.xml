@@ -2,10 +2,10 @@
 <addon id="plugin.video.arteplussept" name="Arte +7" version="1.6.2" provider-name="bmf, thomas-ernest">
     <!-- https://kodi.wiki/view/Addon.xml -->
     <requires>
-        <import addon="xbmc.python" version="3.0.0"/>
-        <import addon="script.module.xbmcswift2" version="19.0.4"/>
+        <import addon="xbmc.python" version="3.0.1"/>
         <import addon="script.module.requests" version="2.22.0"/>
         <import addon="script.module.dateutil" version="2.8.1"/>
+        <import addon="inputstream.adaptive" version="19.0.7"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="addon.py">
         <provides>video</provides>
@@ -58,6 +58,7 @@ Thank you jcosmao for fixing mis cache error when displaying category 60min afte
             <screenshot>resources/screenshot-1.png</screenshot>
             <screenshot>resources/screenshot-2.png</screenshot>
             <screenshot>resources/screenshot-3.png</screenshot>
+            <screenshot>resources/screenshot-4.png</screenshot>
         </assets>
     </extension>
 </addon>

@@ -3,14 +3,10 @@
 - age restrictions/MPAA mapping qnd warnings
 """
 import urllib.parse
-from enum import Enum
 
-
-class PlayFrom(Enum):
-    """Define from where the play request is initiated"""
-    ITM = 'item'
-    LST = 'playlist'
-    CTX = 'context_menu'
+_PLUGIN_NAME = "Arte +7"
+_PLUGIN_VERSION = "1.6.2"
+ADDON_USERAGENT = f"{_PLUGIN_NAME}/{_PLUGIN_VERSION}"
 
 
 def encode_string(string):
@@ -51,7 +47,7 @@ def warn_if_age_restricted(plugin, mpaa):
     and notify with a warning translated message.
 
     Parameters:
-    - plugin: the xbmcswift2 Plugin instance used to translate and display the
+    - plugin: instance used to translate and display the
       notification. If falsy, only the boolean result is returned.
     - mpaa: MPAA rating string to evaluate.
     """

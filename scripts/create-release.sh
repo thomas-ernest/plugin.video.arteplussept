@@ -184,11 +184,11 @@ echo "=== Updating CHANGELOG.md ==="
 } > ${SRC_PATH}CHANGELOG.md.tmp
 mv ${SRC_PATH}CHANGELOG.md.tmp ${SRC_PATH}CHANGELOG.md
 
-echo "=== Updating version in api.py ==="
-sed -i -E 's|^(_PLUGIN_VERSION[[:space:]]*=[[:space:]]*")[^"]*(")|\1'"$VERSION"'\2|' ${SRC_PATH}resources/lib/api.py
+echo "=== Updating version in utils.py ==="
+sed -i -E 's|^(_PLUGIN_VERSION[[:space:]]*=[[:space:]]*")[^"]*(")|\1'"$VERSION"'\2|' ${SRC_PATH}resources/lib/utils.py
 
 echo "=== Creating commit ==="
-git add ${SRC_PATH}addon.xml ${SRC_PATH}CHANGELOG.md ${SRC_PATH}resources/lib/api.py
+git add ${SRC_PATH}addon.xml ${SRC_PATH}CHANGELOG.md ${SRC_PATH}resources/lib/utils.py
 git commit -m "Bump version to $VERSION"
 
 echo "=== Creating annotated tag v$VERSION ==="

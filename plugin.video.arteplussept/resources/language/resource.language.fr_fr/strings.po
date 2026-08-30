@@ -22,14 +22,6 @@ msgctxt "#30050"
 msgid "Language (Videos)"
 msgstr "Langage (Vidéos)"
 
-msgctxt "#30052"
-msgid "Stream video quality"
-msgstr "Qualité vidéo préferée"
-
-msgctxt "#30053"
-msgid "Show video stream options"
-msgstr "Afficher les options de flux vidéo"
-
 msgctxt "#30054"
 msgid "Email"
 msgstr "Adresse e-mail"

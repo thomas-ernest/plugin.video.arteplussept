@@ -1,16 +1,12 @@
 """
-Module for ArteLiveItem depends on ArteTvVideoItem and mapper module
-for map_playable and match_hbbtv
+Module for ArteLiveItem depends on ArteTvVideoItem
 """
 
 import html
-# pylint: disable=import-error
-from xbmcswift2 import actions
-# the goal is to break/limit this dependency as much as possible
-from resources.lib.mapper import mapper
-from resources.lib.mapper.arteitem import ArteTvVideoItem
+import xbmcgui
+from resources.lib import actions
 from resources.lib import utils
-from resources.lib.utils import PlayFrom
+from resources.lib.mapper.arteitem import ArteTvVideoItem
 
 
 class ArteLiveItem(ArteTvVideoItem):
@@ -31,7 +27,7 @@ class ArteLiveItem(ArteTvVideoItem):
             label += f" - {html.unescape(subtitle)}"
         return label
 
-    def build_item_live(self, quality, audio_slot):
+    def build_item_live(self):
         """Return menu entry to watch live content from Arte TV API"""
         item = self.json_dict
         attr = item.get('attributes')
@@ -47,44 +43,42 @@ class ArteLiveItem(ArteTvVideoItem):
             thumbnail_url = fanart_url
         mpaa = self._get_mpaa_age_restriction()
 
-        live_item = {
-            'label': self.format_title_and_subtitle(),
-            'thumbnail': thumbnail_url,
-            'is_playable': True,
-            'info_type': 'video',
-            'info': {
-                'title': meta.get('title'),
-                'duration': duration,
-                'plot': meta.get('description'),
-                'playcount': '0',
-                'mpaa': self._get_mpaa_age_restriction(),
-            },
-            'properties': {
-                'fanart_image': fanart_url,
-            }
-        }
+        live_item = xbmcgui.ListItem(label=self.format_title_and_subtitle())
+        live_item.setArt({'thumb': thumbnail_url, 'fanart': fanart_url})
+        tag = live_item.getVideoInfoTag()
+        tag.setTitle(meta.get('title'))
+        tag.setPlot(self.json_dict.get('shortDescription') or self.json_dict.get('fullDescription'))
+        tag.setPlotOutline(self.json_dict.get('teaserText'))
+        tag.setCountries([country.get('label') for country in item.get('productionCountries', [])])
+        tag.setDirectors([item.get('director')])
+        tag.setMpaa(self._get_mpaa_age_rating())
+        tag.setFirstAired(self._get_air_date())
+        duration = self._get_duration()
+        if duration:
+            tag.setDuration(duration)
+        live_item.setProperty('is_playable', 'True')
+        live_item = self.add_adaptive_hls_attr(live_item)
 
         # playing the stream from program id makes the live starts from the beginning
         # while it starts the video like the live tv, with the above
-        live_stream_item = mapper.map_playable(
-            attr.get('streams'), quality, audio_slot, mapper.match_artetv)
-        if live_stream_item:
-            live_item['path'] = self.plugin.url_for(
-                'play_live', stream_url=live_stream_item.get('path'), mpaa=mpaa)
-            live_item['context_menu'] = [(
+        prgm_id = meta.get('providerId')
+        streams = attr.get('streams', [])
+        if len(streams) > 0 and streams[0].get('url'):
+            path = streams[0].get('url')
+            live_item.setPath(path)
+            live_item.addContextMenuItems([(
                 self.plugin.addon.getLocalizedString(30060),
                 actions.background(self.plugin.url_for(
-                    'play_from', kind='SHOW', program_id=meta.get('providerId'), mpaa=mpaa,
-                    play_from=PlayFrom.CTX.value))
-            )]
+                    'play_from', program_id=prgm_id, mpaa=mpaa))
+            )])
         else:
-            live_item['path'] = self.plugin.url_for(
-                'play_from', kind='SHOW', program_id=meta.get('providerId'), mpaa=mpaa,
-                play_from=PlayFrom.ITM.value)
+            live_item.setPath(self.plugin.url_for(
+                'play_from', program_id=prgm_id, mpaa=mpaa)
+            )
 
         return live_item
 
     def _get_mpaa_age_restriction(self):
         item = self.json_dict
-        age_restriction = item.get('attributes').get('restriction').get('ageRestriction', None)
+        age_restriction = item.get('attributes').get('restriction').get('ageRestriction', 'Unknown')
         return utils.mpaa_from_age(age_restriction)

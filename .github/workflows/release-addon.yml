@@ -18,7 +18,7 @@ jobs:
       uses: xbmc/action-kodi-addon-submitter@v1.3
       with:
         kodi-repository: repo-plugins
-        kodi-version: matrix
+        kodi-version: omega
         addon-id: plugin.video.arteplussept
         kodi-matrix: false
         sub-directory: true

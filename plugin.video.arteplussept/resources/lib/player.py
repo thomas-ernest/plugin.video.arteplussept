@@ -1,6 +1,5 @@
 """Events enhancing behavior of default Kodi player"""
-# pylint: disable=import-error
-from xbmcswift2 import xbmc
+import xbmc
 from resources.lib import api
 
 

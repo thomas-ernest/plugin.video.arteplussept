@@ -29,4 +29,4 @@ jobs:
         pip3 install --user kodi-addon-checker
 
     - name: Addon-Check
-      run: $HOME/.local/bin/kodi-addon-checker --branch=matrix $GITHUB_WORKSPACE/plugin.video.arteplussept
+      run: $HOME/.local/bin/kodi-addon-checker --branch=omega $GITHUB_WORKSPACE/plugin.video.arteplussept

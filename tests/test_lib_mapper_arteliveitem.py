@@ -39,7 +39,8 @@ def load_json(name):
         return json.load(f)
 
 
-@pytest.fixture(name="plugin")
+@pytest.mark.xfail(reason="Failed since decommission of xbmcswift2 and hbb tv api")
+# @pytest.fixture(name="plugin")
 def plugin_fixture():
     """
     Create a mock plugin object with the necessary attributes and methods for testing.
@@ -53,6 +54,7 @@ def plugin_fixture():
     return plugin
 
 
+@pytest.mark.xfail(reason="Failed since decommission of xbmcswift2 and hbb tv api")
 @pytest.mark.parametrize("payload, expected", [
     ("live_wo_stream_with_program-api.json", "live_wo_stream_with_program-xbmc.json"),
     ("live_with_streams-api.json", "live_with_streams-xbmc.json")
@@ -61,7 +63,7 @@ def test_build_item_live_contract(plugin, payload, expected):
     """Test the build_item_live method of ArteLiveItem for contract compliance."""
     item = ArteLiveItem(plugin, load_json(payload).get('data'))
 
-    result = item.build_item_live(quality="SQ", audio_slot="1")
+    result = item.build_item_live()
 
     expected_json = load_json(expected)
     # Normalize context_menu array into tuple

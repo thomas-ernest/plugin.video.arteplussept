@@ -2,26 +2,9 @@
 from collections import OrderedDict
 # pylint: disable=import-error
 import requests
-# pylint: disable=import-error
-from xbmcswift2 import xbmc
-from resources.lib import hof
+import xbmc
 from resources.lib import logger
-
-_PLUGIN_NAME = "Arte +7"
-_PLUGIN_VERSION = "1.6.2"
-# Arte hbbtv - deprecated API since 2022 prefer Arte TV API
-_HBBTV_URL = 'https://www.arte.tv/hbbtvv2/services/web/index.php'
-_HBBTV_HEADERS = {
-    'user-agent': f"{_PLUGIN_NAME}/{_PLUGIN_VERSION}"
-}
-_HBBTV_ENDPOINTS = {
-    'category': '/EMAC/teasers/category/v2/{category_code}/{lang}',
-    'collection': '/EMAC/teasers/collection/v2/{collection_id}/{lang}',
-    # program details
-    'video': '/OPA/v3/videos/{program_id}/{lang}',
-    # program streams
-    'streams': '/OPA/v3/streams/{program_id}/{kind}/{lang}'
-}
+from resources.lib.utils import ADDON_USERAGENT
 
 
 # Arte TV API - Used on Arte TV website
@@ -55,6 +38,7 @@ ARTETV_ENDPOINTS = {
     'personal_data': '/sso/v3/me',
     # program_id can be 103520-000-A or LIVE
     'player': '/player/v2/config/{lang}/{program_id}',
+    'playlist': '/player/v2/playlist/{lang}/{collection_id}',
     'program': '/emac/v4/{lang}/web/programs/{program_id}',
     # category=HOME, CIN, SER, SEARCH client=app, tv, web, orange, free
     'page': '/emac/v4/{lang}/{client}/pages/{category}/',
@@ -74,8 +58,11 @@ ARTETV_ENDPOINTS = {
     # auth api
     'login': '/login',
 }
+LIGHT_HEADERS = {
+    'user-agent': ADDON_USERAGENT
+}
 ARTETV_HEADERS = {
-    'user-agent': f"{_PLUGIN_NAME}/{_PLUGIN_VERSION}",
+    'user-agent': ADDON_USERAGENT,
     # required to use token endpoint
     'authorization': 'I6k2z58YGO08P1X0E8A7VBOjDxr8Lecg',
     # required for Arte TV API. values like web, app, tv, orange, free
@@ -206,6 +193,12 @@ def player_video(lang, program_id):
     return _load_json_full_url('artetv_player', url, None).get('data', {})
 
 
+def playlist_collection(lang, collection_id):
+    """Get the info of content program_id from Arte TV API."""
+    url = _ARTETV_URL + ARTETV_ENDPOINTS['playlist'].format(lang=lang, collection_id=collection_id)
+    return _load_json_full_url('artetv_playlist', url, None).get('data', {})
+
+
 def program_video(lang, program_id):
     """Get the info of content program_id from Arte TV API."""
     url = _ARTETV_URL + ARTETV_ENDPOINTS['program'].format(lang=lang, program_id=program_id)
@@ -231,56 +224,26 @@ def is_of_kind(arte_item, kind):
     return (arte_item and arte_item.get('kind') == kind) or False
 
 
-def category(category_code, lang):
-    """Get the info of category with category_code."""
-    url = _HBBTV_ENDPOINTS['category'].format(category_code=category_code, lang=lang)
-    return _load_json('hbbtv_category', url).get('category', {})
-
-
-def collection(kind, collection_id, lang):
-    """Get the info of collection collection_id"""
-    url = _HBBTV_ENDPOINTS['collection'].format(
-        kind=kind, collection_id=collection_id, lang=lang)
-    sub_collections = _load_json('hbbtv_collection', url).get('subCollections', [])
-    return hof.flat_map(
-        lambda sub_collections: sub_collections.get('videos', []),
-        sub_collections)
-
-
-def collection_with_last_viewed(lang, tkn, kind, collection_id):
-    """
-    Get the info of collection collection_id and enhanced them with last_viewed details
-    e.g. progress
-    """
-    collection_items = collection(kind, collection_id, lang)
-    last_viewed_items = get_last_viewed_all(lang, tkn)
-    # nothing to do
-    if len(collection_items) < 1 or len(last_viewed_items) < 1:
-        return collection_items
-    # merge the 2 collection based on program id.
-    last_viewed_map = {}
-    for item in last_viewed_items:
-        last_viewed_map[item.get('programId')] = item
-    for idx, basic_item in enumerate(collection_items):
-        if basic_item is not None and basic_item.get('programId') is not None:
-            enhanced_item = last_viewed_map.get(basic_item.get('programId'))
-            if enhanced_item is not None:
-                collection_items[idx] = enhanced_item
-    return collection_items
-
-
-def video(program_id, lang):
-    """Get the info of content program_id from HBB TV API."""
-    url = _HBBTV_ENDPOINTS['video'].format(
-        program_id=program_id, lang=lang)
-    return _load_json('hbbtv_video', url).get('videos', [])[0]
-
-
-def streams(kind, program_id, lang):
-    """Get the stream info of content program_id."""
-    url = _HBBTV_ENDPOINTS['streams'].format(
-        kind=kind, program_id=program_id, lang=lang)
-    return _load_json('hbbtv_streams', url).get('videoStreams', [])
+# def collection_with_last_viewed(lang, tkn, kind, collection_id):
+#     """
+#     Get the info of collection collection_id and enhanced them with last_viewed details
+#     e.g. progress
+#     """
+#     collection_items = collection(kind, collection_id, lang)
+#     last_viewed_items = get_last_viewed_all(lang, tkn)
+#     # nothing to do
+#     if len(collection_items) < 1 or len(last_viewed_items) < 1:
+#         return collection_items
+#     # merge the 2 collection based on program id.
+#     last_viewed_map = {}
+#     for item in last_viewed_items:
+#         last_viewed_map[item.get('programId')] = item
+#     for idx, basic_item in enumerate(collection_items):
+#         if basic_item is not None and basic_item.get('programId') is not None:
+#             enhanced_item = last_viewed_map.get(basic_item.get('programId'))
+#             if enhanced_item is not None:
+#                 collection_items[idx] = enhanced_item
+#     return collection_items
 
 
 def page_content(lang, cat='HOME'):
@@ -326,17 +289,9 @@ def get_zone_page(lang, zone_id, page_idx):
     return _load_json_full_url('artetv_getzonepage', url, ARTETV_HEADERS)
 
 
-def _load_json(request_scope, path, headers=None):
-    """Deprecated since 2022. Prefer building url on client side"""
-    if headers is None:
-        headers = _HBBTV_HEADERS
-    url = _HBBTV_URL + path
-    return _load_json_full_url(request_scope, url, headers)
-
-
 def _load_json_full_url(request_scope, url, headers=None, params=None):
     if headers is None:
-        headers = _HBBTV_HEADERS
+        headers = LIGHT_HEADERS
     # https://requests.readthedocs.io/en/latest/
     reply = requests.get(url, headers=headers, params=params, timeout=10)
     logger.log_json(reply, request_scope)

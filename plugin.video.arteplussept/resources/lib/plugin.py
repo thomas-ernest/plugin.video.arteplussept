@@ -1,23 +1,24 @@
 """Main module for Kodi add-on plugin.video.arteplussept"""
 
 from datetime import date
+import traceback
+import json
+
 import xbmcaddon
 import xbmcgui
-# pylint: disable=import-error
-from xbmcswift2 import Plugin
-# pylint: disable=import-error
-from xbmcswift2 import xbmc
+import xbmc
+
 from resources.lib import logger
 from resources.lib import user
-from resources.lib import view
+from resources.lib import utils
+from resources.lib.mapper import mapper
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
 from resources.lib.mapper.artesearch import ArteSearch
 from resources.lib.mapper.artezone import ArteZone
+from resources.lib.native_plugin import Plugin
 from resources.lib.player import Player
 from resources.lib.settings import Settings
-from resources.lib import utils
-from resources.lib.utils import PlayFrom
 
 DATE_FORMAT = "%Y-%m-%d"
 
@@ -44,9 +45,9 @@ def display_index():
         addon.setSetting("last_version_notified", current_version)
         addon.setSetting("last_date_notified", date.today().strftime(DATE_FORMAT))
 
-    lst_itms = view.build_home_page(
-        plugin, settings, plugin.get_storage('cached_categories', TTL=60))
+    lst_itms = mapper.build_home_page(plugin, settings)
     logger.log_xbmc(lst_itms, 'index')
+    user.update_login_state_settings(plugin, settings.username)
     return lst_itms
 
 
@@ -54,44 +55,22 @@ def days_since(date_str):
     """
     date_str: '2026-08-14' or '' (empty)
     Returns number of days between today and date_str.
-    If empty → MAX_INT.
     """
-
-    if not date_str:
-        return 1000000
-
     try:
+        # parse YYYY-MM-DD
         other = date.fromisoformat(date_str)
     except ValueError:
-        # invalid format, not a date
+        # invalid format or not a date
         return 1000000
 
     today = date.today()
     return (today - other).days
 
 
-@plugin.route('/category/api/<category_code>', name='api_category')
-def display_api_category(category_code):
-    """Display the menu for a category that needs an api call"""
-    lst_itms = view.build_api_category(plugin, category_code, settings)
-    logger.log_xbmc(lst_itms, 'api_category')
-    return lst_itms
-
-
-@plugin.route('/category/cached/<zone_id>', name='cached_category')
-def display_cached_category(zone_id):
-    """Display the menu for a category that is stored
-    in cache from previous api call like home page"""
-    lst_itms = view.get_cached_category(
-        plugin, settings, zone_id, plugin.get_storage('cached_categories', TTL=60))
-    logger.log_xbmc(lst_itms, 'cached_category')
-    return lst_itms
-
-
 @plugin.route('/category/page/<zone_id>/<page>/<page_id>', name='category_page')
 def display_category_page(zone_id, page, page_id):
     """Display the menu for a category that needs an api call"""
-    lst_itms = ArteZone(plugin, settings, plugin.get_storage('cached_categories', TTL=60)) \
+    lst_itms = ArteZone(plugin, settings) \
         .build_menu(zone_id, page, page_id)
     logger.log_xbmc(lst_itms, 'category_page')
     return lst_itms
@@ -100,8 +79,7 @@ def display_category_page(zone_id, page, page_id):
 @plugin.route('/raw_page/<category>', name='raw_page')
 def display_raw_page(category):
     """Display the menu for a category that needs an api call"""
-    lst_itms = view.build_page(plugin, settings, category)
-    xbmc.log(f"all my lst_itms {lst_itms}", xbmc.LOGWARNING)
+    lst_itms = mapper.build_page(plugin, settings, category)
     logger.log_xbmc(lst_itms, 'raw_page')
     return lst_itms
 
@@ -137,14 +115,6 @@ def purge_favroties():
     ArteFavorites(plugin, settings).purge()
 
 
-@plugin.route('/mark_as_watched/<program_id>/<label>', name='mark_as_watched')
-def mark_as_watched(program_id, label):
-    """Mark program as watched in Arte
-    Notify about completion status with label,
-    useful when several operations are requested in parallel."""
-    view.mark_as_watched(plugin, settings.username, program_id, label)
-
-
 @plugin.route('/last_viewed', name='last_viewed_default')
 @plugin.route('/last_viewed/<page>', name='last_viewed')
 def display_last_viewed(page=1):
@@ -160,37 +130,84 @@ def purge_last_viewed():
     ArteHistory(plugin, settings).purge()
 
 
-@plugin.route('/collection/<kind>/<program_id>', name='collection')
-def display_collection(kind, program_id):
+@plugin.route('/mark_as_watched/<program_id>/<label>', name='mark_as_watched')
+def mark_as_watched(program_id, label):
+    """Mark program as watched in Arte
+    Notify about completion status with label,
+    useful when several operations are requested in parallel."""
+    ArteHistory(plugin, settings).mark_as_watched(program_id, label)
+
+
+@plugin.route('/collection/<program_id>', name='collection')
+def display_collection(program_id):
     """Display menu for collection of content"""
-    lst_itms = view.build_mixed_collection(plugin, kind, program_id, settings)
+    lst_itms = mapper.build_playlist_from_collection(
+        plugin, settings, program_id, menu=True)['collection']
     logger.log_xbmc(lst_itms, 'collection')
     return lst_itms
 
 
-@plugin.route('/streams/<program_id>', name='streams')
-def display_streams(program_id):
-    """Play a multi language content."""
-    lst_itms = view.build_video_streams(plugin, settings, program_id)
-    logger.log_xbmc(lst_itms, 'streams')
-    return lst_itms
-
-
-@plugin.route('/play_live/<stream_url>/<mpaa>', name='play_live')
+@plugin.route('/play/live/<stream_url>/<mpaa>', name='play_live')
 def play_live(stream_url, mpaa):
     """Play live content."""
     utils.warn_if_age_restricted(plugin, mpaa)
-    lst_itm = {'path': stream_url}
-    logger.log_xbmc(lst_itm, 'play_live')
-    return plugin.set_resolved_url(lst_itm)
+    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
+    xbmc.Player().play(stream_url)
 
-# Cannot read video new arte tv program API. Blocked by FFMPEG issue #10149
-# @plugin.route('/play_artetv/<program_id>', name='play_artetv')
-# def play_artetv(program_id):
-#     item = api.player_video(settings.language, program_id)
-#     attr = item.get('attributes')
-#     streamUrl=attr.get('streams')[0].get('url')
-#     return plugin.set_resolved_url({'path': streamUrl})
+
+@plugin.route('/play/<program_id>/<mpaa>', name='play')
+def play(program_id, mpaa):
+    """
+    Play content identified with program_id.
+    """
+    plugin_operate(plugin, 'inputstream.adaptive')
+    synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
+    played_item = None
+    try:
+        played_item = mapper.build_video_from_program(plugin, settings, program_id)
+    # pylint: disable=broad-exception-caught
+    except Exception as exp:
+        stack_trace = traceback.format_tb(exp.__traceback__)
+        xbmc.log(f"Exception during stream resolution {stack_trace}", xbmc.LOGERROR)
+    if played_item:
+        logger.log_xbmc(played_item, 'play')
+        xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
+        xbmc.Player().play(played_item.getPath(), played_item)
+        utils.warn_if_age_restricted(plugin, mpaa)
+        synch_during_playback(synched_player)
+    else:
+        xbmc.log("Could not resolve stream...", xbmc.LOGERROR)
+        addon = xbmcaddon.Addon()
+        plugin.notify(addon.getLocalizedString(30029).format(strm=program_id, ln='no'))
+
+    del synched_player
+
+
+@plugin.route('/play/collection/<col_id>/<mpaa>', name='play_collection')
+@plugin.route('/play/collection/<col_id>/<mpaa>/from/<prgm_id>', name='play_collection_from')
+def play_collection(col_id, mpaa, prgm_id=None):
+    """
+    Load a playlist and start playing its first item.
+    """
+    playlist = mapper.build_playlist_from_collection(plugin, settings, col_id)
+    startpos = playlist['prgm_id_to_pos'].get(prgm_id, False)
+    if not isinstance(startpos, int):
+        startpos = -1
+        prgm_id = playlist['pos_to_prgm_id'][0]
+
+    plugin_operate(plugin, 'inputstream.adaptive')
+    # Start playing with the first playlist item
+    synched_player = Player(
+        user.get_cached_token(plugin, settings.username, True), prgm_id)
+    # try to seek parent collection, when out of the context of playlist creation
+    # Start playing with the first playlist item
+    played_item = mapper.build_playable_playlist(playlist['collection'])
+    logger.log_xbmc(played_item, 'play_collection')
+    xbmc.Player().play(played_item, startpos=startpos)
+    utils.warn_if_age_restricted(plugin, mpaa)
+    synch_during_playback(synched_player)
+    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
+    del synched_player
 
 
 def synch_during_playback(synched_player):
@@ -210,63 +227,44 @@ def synch_during_playback(synched_player):
     synched_player.synch_progress()
 
 
-@plugin.route('/play/<kind>/<program_id>/<mpaa>', name='play')
-@plugin.route('/play/<kind>/<program_id>/<mpaa>/<play_from>', name='play_from')
-@plugin.route('/play/<kind>/<program_id>/<mpaa>/<play_from>/<audio_slot>', name='play_specific')
-def play(kind, program_id, mpaa, play_from=PlayFrom.ITM, audio_slot='1'):
-    """Play content identified with program_id.
-    :param str kind: an enum in TODO (e.g. TRAILER, COLLECTION, LINK, CLIP, ...)
-    :param str audio_slot: a numeric to identify the audio stream to use e.g. 1 2
-    """
-    synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
-    # try to seek parent collection, when out of the context of playlist creation
-    sibling_playlist = None
-    if play_from == PlayFrom.LST.value:
-        sibling_playlist = view.build_sibling_playlist(plugin, settings, program_id)
-    played_item = None
-    if sibling_playlist is not None and len(sibling_playlist['collection']) > 1:
-        # Empty playlist, otherwise requested video is present twice in the playlist
-        xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
-        # Start playing with the first playlist item
-        played_item = plugin.add_to_playlist(sibling_playlist['collection'])[0]
-        logger.log_xbmc(played_item, 'play')
-        result = plugin.set_resolved_url()
-    else:
-        played_item = view.build_stream_url(plugin, settings, kind, program_id, int(audio_slot))
-        logger.log_xbmc(played_item, 'play')
-        if play_from == PlayFrom.CTX.value:
-            result = plugin.play_video(played_item)
-        else:
-            result = plugin.set_resolved_url(played_item)
-    utils.warn_if_age_restricted(plugin, mpaa)
-
-    synch_during_playback(synched_player)
-    del synched_player
-    return result
-
-
-@plugin.route('/play_collection/<kind>/<collection_id>/<mpaa>', name='play_collection')
-def play_collection(kind, collection_id, mpaa):
-    """
-    Load a playlist and start playing its first item.
-    """
-    playlist = view.build_collection_playlist(plugin, settings, kind, collection_id)
-
-    # Empty playlist, otherwise requested video is present twice in the playlist
-    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
-    # Start playing with the first playlist item
-    synched_player = Player(
-        user.get_cached_token(plugin, settings.username, True),
-        playlist['start_program_id'])
-    # try to seek parent collection, when out of the context of playlist creation
-    # Start playing with the first playlist item
-    played_item = plugin.add_to_playlist(playlist['collection'])[0]
-    logger.log_xbmc(played_item, 'play_collection')
-    result = plugin.set_resolved_url(played_item)
-    utils.warn_if_age_restricted(plugin, mpaa)
-    synch_during_playback(synched_player)
-    del synched_player
-    return result
+def plugin_operate(my_plugin, marking):
+    """Enforce inputstream adaptive plugin is installed and activated"""
+    addon = xbmcaddon.Addon()
+    # pylint: disable=line-too-long
+    check_uno = xbmc.executeJSONRPC(f'{{"jsonrpc":"2.0","id":1,"method":"Addons.GetAddonDetails","params":{{"addonid":"{marking}","properties":["enabled"]}}}}') # noqa E501
+    answer_uno = json.loads(check_uno)
+    answer_due = json.loads(f'{{"error": "{marking} NOT FOUND"}}')
+    answer_uno_ok = answer_uno.get('result', {}).get('addon', {}).get('enabled', False) is True
+    if "error" not in answer_uno.keys() and not answer_uno_ok:
+        try:
+            # pylint: disable=line-too-long
+            xbmc.executeJSONRPC(f'{{"jsonrpc":"2.0","id":1,"method":"Addons.SetAddonEnabled","params":{{"addonid":"{marking}","enabled":true}}}}') # noqa E501
+            xbmc.log("(common.plugin_operate) ERROR - ACTIVATED - ERROR :\n" +
+                     f"##### Das benötigte Addon : *{marking}* ist NICHT aktiviert !!! #####\n" +
+                     "##### Es wird jetzt versucht die Aktivierung durchzuführen !!! #####",
+                     xbmc.LOGERROR)
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            pass
+        del answer_due
+        # pylint: disable=line-too-long
+        check_due = xbmc.executeJSONRPC(f'{{"jsonrpc":"2.0","id":1,"method":"Addons.GetAddonDetails","params":{{"addonid":"{marking}","properties":["enabled"]}}}}') # noqa E501
+        answer_due = json.loads(check_due)
+    answer_due_ok = answer_due.get('result', {}).get('addon', {}).get('enabled', False) is True
+    if answer_uno_ok or answer_due_ok:
+        return True
+    if not answer_due_ok:
+        my_plugin.plugin.notify(addon.getLocalizedString(30501).format(marking))
+        xbmc.log("(common.plugin_operate) ERROR - ACTIVATED - ERROR :\n" +
+                 f"##### Das benötigte Addon : *{marking}* ist NICHT aktiviert !!! #####\n" +
+                 "##### Eine automatische Aktivierung ist leider NICHT möglich !!! #####",
+                 xbmc.LOGERROR)
+    if "error" in answer_uno.keys() or "error" in answer_due.keys():
+        my_plugin.plugin.notify(addon.getLocalizedString(30502).format(marking))
+        xbmc.log("(common.plugin_operate) ERROR - INSTALLED - ERROR :\n" +
+                 f"##### Das benötigte Addon : *{marking}* ist NICHT installiert !!! #####",
+                 xbmc.LOGERROR)
+    return False
 
 
 @plugin.route('/search', name='init_search')
@@ -286,16 +284,16 @@ def display_search_page(zone_id, page, query):
     return lst_itms
 
 
-@plugin.route('/user/login', name='user_login')
+@plugin.route('/user/login', name='/user/login')
 def user_login():
     """Login user with email already set in settings by creating and persisting a token."""
-    return plugin.finish(succeeded=user.login(plugin))
+    return user.login(plugin)
 
 
-@plugin.route('/user/logout', name='user_logout')
+@plugin.route('/user/logout', name='/user/logout')
 def user_logout():
     """Discard token of user in settings."""
-    return plugin.finish(succeeded=user.logout(plugin, settings))
+    return user.logout(plugin)
 
 
 # plugin bootstrap
