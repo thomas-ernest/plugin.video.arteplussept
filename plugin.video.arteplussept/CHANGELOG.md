@@ -1,3 +1,12 @@
+v2.0.0 (2026-8-30)
+
+- Replace xbmcswift2 routing and file-based cache with native shim; remove external dependency
+- Switch category, video and stream endpoints to Arte TV API; remove any call to HBB TV API
+- Add multi-language playback with subtitles (adaptive inputstream)
+- Remove cached categories; fix mis cache as with 1.6.2
+- Fix login state display in addon  settings
+- Tracking of played videos still failing. Cross device replay start from scratch.
+
 v1.6.2 (2026-8-30)
 
 Thank you jcosmao for fixing mis cache error when displaying category 60min after home page display.
