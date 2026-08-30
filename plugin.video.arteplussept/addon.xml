@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.arteplussept" name="Arte +7" version="1.6.1" provider-name="bmf, thomas-ernest">
+<addon id="plugin.video.arteplussept" name="Arte +7" version="1.6.2" provider-name="bmf, thomas-ernest">
     <!-- https://kodi.wiki/view/Addon.xml -->
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
@@ -50,11 +50,8 @@ Erori sau solicitări: https://github.com/thomas-ernest/plugin.video.arteplussep
         <license>MIT</license>
         <website>https://thomas-ernest.github.io/</website>
         <source>https://github.com/thomas-ernest/plugin.video.arteplussept</source>
-<news>1.6.1 (2026-8-22)
-Add support for external page items and fix frequency of update disclamer
-
-- external pages are list of zones - new item &quot;Categories et genre&quot; in main menu.
-- Fix disclamer with link for issues and donations on version update or every 30d.</news>
+<news>1.6.2 (2026-8-30)
+Thank you jcosmao for fixing mis cache error when displaying category 60min after home page display.</news>
         <assets>
             <icon>resources/icon.png</icon>
             <fanart>resources/fanart.jpg</fanart>
