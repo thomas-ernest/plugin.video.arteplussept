@@ -1,3 +1,7 @@
+v1.6.2 (2026-8-30)
+
+Thank you jcosmao for fixing mis cache error when displaying category 60min after home page display.
+
 v1.6.1 (2026-8-22)
 
 Add support for external page items and fix frequency of update disclamer
