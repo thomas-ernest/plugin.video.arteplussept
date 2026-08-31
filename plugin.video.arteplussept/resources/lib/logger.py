@@ -83,9 +83,38 @@ def to_jsonable(payload):
     }
 
 
-def format_headers(headers):
+def format_headers(headers) -> str:
     """Map headers into a readable string to be logged."""
-    return '\n'.join(f'{k}: {v}' for k, v in headers.items())
+    return '\n'.join(f'{k}: {v}' for k, v in _redact_value(dict(headers)).items())
+
+
+def _is_sensitive_field(key):
+    """Determine if a field name is considered sensitive and should be redacted."""
+    normalized = str(key).lower().replace('-', '').replace('_', '')
+    return (
+        normalized in ['password', 'pwd', 'secret', 'email', 'username', 'user', 'login',
+                       'authorization', 'proxy-authorization', 'cookie', 'set-cookie', 'x-api-key']
+        or normalized.endswith('token')
+    )
+
+
+def _redact_value(value):
+    """
+    Recursively redact sensitive fields in a value.
+    Check is key is sensitive in case of dict, otherwise redact the value itself.
+    """
+    if isinstance(value, dict):
+        return {
+            key: '<redacted>' if _is_sensitive_field(key) else item
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_redact_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_value(item) for item in value)
+    if isinstance(value, str):
+        return '<redacted>'
+    return value
 
 
 def get_dict_from_info_tag_video(li):

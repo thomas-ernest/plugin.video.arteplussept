@@ -342,7 +342,9 @@ def authenticate_in_arte(plugin, username='', password='', headers=None):
     try:
         # https://requests.readthedocs.io/en/latest/
         reply = requests.post(url, data=token_data, headers=headers, timeout=10)
-        logger.log_json(reply, 'artetv_auth_password')
+        # uncomment the next line will disclose your credentials in addon logs
+        # do it temporarely and if necessary and clarify how to clean-up addon logs first
+        # logger.log_json(reply, 'artetv_auth_password')
     except requests.exceptions.ConnectionError as err:
         # unable to auth. e.g.
         # HTTPSConnectionPool(host='api.arte.tv', port=443):
@@ -406,7 +408,9 @@ def device_token_request(device_code):
         }
 
         resp = requests.post(DEVICETOKEN_URL, data=payload, headers=headers, timeout=10)
-        logger.log_json(resp, 'artetv_auth_devicetoken')
+        # uncomment the next line will disclose your credentials in addon logs
+        # do it temporarely and if necessary and clarify how to clean-up addon logs first
+        # logger.log_json(resp, 'artetv_auth_devicetoken')
         return resp.json()
 
     # pylint: disable=broad-except

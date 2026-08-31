@@ -112,7 +112,8 @@ def want_to_continue_or_override_auth(plugin, new_user):
     # since token can be retrieved/is indexed by email.
     current_tkn = get_cached_token(plugin, new_user, True)
     if _is_token_valid(current_tkn):
-        xbmc.log(f"\"{new_user}\" already authenticated : {current_tkn['access_token']}")
+        expiry_date = _get_expiry_date(current_tkn)
+        xbmc.log(f"\"{new_user}\" already authenticated until : {expiry_date or 'unknown'}")
         # notify user that current token might be replaced
         accept_to_replace = xbmcgui.Dialog().yesno(
             addon.getLocalizedString(30015),
@@ -274,25 +275,33 @@ def update_login_state_settings(plugin, email):
     addon.setSetting('login_acc', message)
 
 
-def _is_token_valid(token):
+def _get_expiry_date(token):
+    """
+    Return token expiry date or None
+    """
+    return token.get('expires_in', None) if isinstance(token, dict) else None
+
+
+def _is_token_valid(token) -> bool:
     """
     Return True if the token is not None and has not yet expired
     """
-    return token and token.get('expires_in') and _is_future(token.get('expires_in'))
+    return _is_future(_get_expiry_date(token))
 
 
-def _is_future(ts: str) -> bool:
+def _is_future(ts) -> bool:
     """
     Return True if ts is in future, False otherzise e.g. None
     """
     try:
         dt = datetime.datetime.fromisoformat(ts)
+        now = datetime.datetime.now(datetime.timezone.utc)
+        return dt > now
     # pylint: disable=broad-exception-caught
     except Exception:
-        xbmc.log("Unable to parse Arte token expiration date", xbmc.LOGERROR)
-        return False
-    now = datetime.datetime.now(datetime.timezone.utc)
-    return dt > now
+        pass
+    xbmc.log("Unable to parse Arte token expiration date", xbmc.LOGERROR)
+    return False
 
 
 def get_cached_token(plugin, token_idx, silent=False):

@@ -69,11 +69,11 @@ class ArteLiveItem(ArteTvVideoItem):
             live_item.addContextMenuItems([(
                 self.plugin.addon.getLocalizedString(30060),
                 actions.background(self.plugin.url_for(
-                    'play_from', program_id=prgm_id, mpaa=mpaa))
+                    'play', program_id=prgm_id, mpaa=mpaa))
             )])
         else:
             live_item.setPath(self.plugin.url_for(
-                'play_from', program_id=prgm_id, mpaa=mpaa)
+                'play', program_id=prgm_id, mpaa=mpaa)
             )
 
         return live_item

@@ -1,6 +1,7 @@
 """Main module for Kodi add-on plugin.video.arteplussept"""
 
 from datetime import date
+from typing import Final
 import traceback
 import json
 
@@ -190,10 +191,21 @@ def play_collection(col_id, mpaa, prgm_id=None):
     Load a playlist and start playing its first item.
     """
     playlist = mapper.build_playlist_from_collection(plugin, settings, col_id)
-    startpos = playlist['prgm_id_to_pos'].get(prgm_id, False)
-    if not isinstance(startpos, int):
-        startpos = -1
-        prgm_id = playlist['pos_to_prgm_id'][0]
+    # make sure there is a playlist
+    if playlist and playlist['collection'] and len(playlist['collection']) <= 0:
+        xbmc.log(f"Unable to fetch collection {col_id} to play it", xbmc.LOGERROR)
+        addon = xbmcaddon.Addon()
+        plugin.notify(addon.getLocalizedString(30029).format(strm=col_id, ln='no'))
+        return
+    # set start position with or without program id
+    # pylint: disable=invalid-name
+    DEFAULT_START_POS: Final[int] = -1
+    startpos = DEFAULT_START_POS
+    if prgm_id:
+        startpos = playlist['prgm_id_to_pos'].get(prgm_id, DEFAULT_START_POS)
+        if DEFAULT_START_POS == startpos:
+            xbmc.log(f"Unable to find program {prgm_id} in collection {col_id}. " +
+                     f"Starting from {startpos}", xbmc.LOGERROR)
 
     plugin_operate(plugin, 'inputstream.adaptive')
     # Start playing with the first playlist item
