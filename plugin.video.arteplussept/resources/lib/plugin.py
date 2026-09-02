@@ -12,9 +12,11 @@ import xbmc
 from resources.lib import logger
 from resources.lib import user
 from resources.lib import utils
+from resources.lib import api
 from resources.lib.mapper import mapper
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
+from resources.lib.mapper.arteliveitem import ArteLiveItem
 from resources.lib.mapper.artesearch import ArteSearch
 from resources.lib.mapper.artezone import ArteZone
 from resources.lib.native_plugin import Plugin
@@ -60,7 +62,7 @@ def days_since(date_str):
     try:
         # parse YYYY-MM-DD
         other = date.fromisoformat(date_str)
-    except ValueError:
+    except (TypeError, ValueError):
         # invalid format or not a date
         return 1000000
 
@@ -151,9 +153,16 @@ def display_collection(program_id):
 @plugin.route('/play/live/<stream_url>/<mpaa>', name='play_live')
 def play_live(stream_url, mpaa):
     """Play live content."""
+    if not plugin_operate(plugin, 'inputstream.adaptive'):
+        addon = xbmcaddon.Addon()
+        plugin.notify(addon.getLocalizedString(30034).format(strm=stream_url), image='error')
+        return None
     utils.warn_if_age_restricted(plugin, mpaa)
+    live_item = ArteLiveItem(plugin, api.player_video(settings.language, 'LIVE')).build_item_live()
+    live_item.setPath(stream_url)
     xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
-    xbmc.Player().play(stream_url)
+    xbmc.Player().play(stream_url, live_item)
+    return True
 
 
 @plugin.route('/play/<program_id>/<mpaa>', name='play')
@@ -161,7 +170,10 @@ def play(program_id, mpaa):
     """
     Play content identified with program_id.
     """
-    plugin_operate(plugin, 'inputstream.adaptive')
+    if not plugin_operate(plugin, 'inputstream.adaptive'):
+        addon = xbmcaddon.Addon()
+        plugin.notify(addon.getLocalizedString(30034).format(strm=program_id), image='error')
+        return None
     synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
     played_item = None
     try:
@@ -172,9 +184,9 @@ def play(program_id, mpaa):
         xbmc.log(f"Exception during stream resolution {stack_trace}", xbmc.LOGERROR)
     if played_item:
         logger.log_xbmc(played_item, 'play')
+        utils.warn_if_age_restricted(plugin, mpaa)
         xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
         xbmc.Player().play(played_item.getPath(), played_item)
-        utils.warn_if_age_restricted(plugin, mpaa)
         synch_during_playback(synched_player)
     else:
         xbmc.log("Could not resolve stream...", xbmc.LOGERROR)
@@ -182,6 +194,7 @@ def play(program_id, mpaa):
         plugin.notify(addon.getLocalizedString(30029).format(strm=program_id, ln='no'))
 
     del synched_player
+    return True
 
 
 @plugin.route('/play/collection/<col_id>/<mpaa>', name='play_collection')
@@ -190,13 +203,19 @@ def play_collection(col_id, mpaa, prgm_id=None):
     """
     Load a playlist and start playing its first item.
     """
+    if not plugin_operate(plugin, 'inputstream.adaptive'):
+        addon = xbmcaddon.Addon()
+        plugin.notify(addon.getLocalizedString(30034).format(strm=col_id), image='error')
+        return None
+    # Empty playlist, otherwise requested video is present twice in the playlist
+    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
     playlist = mapper.build_playlist_from_collection(plugin, settings, col_id)
     # make sure there is a playlist
-    if playlist and playlist['collection'] and len(playlist['collection']) <= 0:
+    if not playlist or not playlist['collection'] or len(playlist['collection']) <= 0:
         xbmc.log(f"Unable to fetch collection {col_id} to play it", xbmc.LOGERROR)
         addon = xbmcaddon.Addon()
         plugin.notify(addon.getLocalizedString(30029).format(strm=col_id, ln='no'))
-        return
+        return None
     # set start position with or without program id
     # pylint: disable=invalid-name
     DEFAULT_START_POS: Final[int] = -1
@@ -207,19 +226,21 @@ def play_collection(col_id, mpaa, prgm_id=None):
             xbmc.log(f"Unable to find program {prgm_id} in collection {col_id}. " +
                      f"Starting from {startpos}", xbmc.LOGERROR)
 
-    plugin_operate(plugin, 'inputstream.adaptive')
     # Start playing with the first playlist item
-    synched_player = Player(
-        user.get_cached_token(plugin, settings.username, True), prgm_id)
+    # Disabling playback synchronization because it is not working
+    # ensured that the synched_player is created with the program id of the item being played
+    # when playing a collection
+    # synched_player = Player(
+    #    user.get_cached_token(plugin, settings.username, True), prgm_id)
     # try to seek parent collection, when out of the context of playlist creation
     # Start playing with the first playlist item
     played_item = mapper.build_playable_playlist(playlist['collection'])
     logger.log_xbmc(played_item, 'play_collection')
-    xbmc.Player().play(played_item, startpos=startpos)
     utils.warn_if_age_restricted(plugin, mpaa)
-    synch_during_playback(synched_player)
-    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
-    del synched_player
+    xbmc.Player().play(played_item, startpos=startpos)
+    # synch_during_playback(synched_player)
+    # del synched_player
+    return True
 
 
 def synch_during_playback(synched_player):
@@ -266,13 +287,13 @@ def plugin_operate(my_plugin, marking):
     if answer_uno_ok or answer_due_ok:
         return True
     if not answer_due_ok:
-        my_plugin.plugin.notify(addon.getLocalizedString(30501).format(marking))
+        my_plugin.notify(addon.getLocalizedString(30034).format(strm='n/a'))
         xbmc.log("(common.plugin_operate) ERROR - ACTIVATED - ERROR :\n" +
                  f"##### Das benötigte Addon : *{marking}* ist NICHT aktiviert !!! #####\n" +
                  "##### Eine automatische Aktivierung ist leider NICHT möglich !!! #####",
                  xbmc.LOGERROR)
     if "error" in answer_uno.keys() or "error" in answer_due.keys():
-        my_plugin.plugin.notify(addon.getLocalizedString(30502).format(marking))
+        my_plugin.notify(addon.getLocalizedString(30034).format(strm='n/a'))
         xbmc.log("(common.plugin_operate) ERROR - INSTALLED - ERROR :\n" +
                  f"##### Das benötigte Addon : *{marking}* ist NICHT installiert !!! #####",
                  xbmc.LOGERROR)
@@ -296,13 +317,13 @@ def display_search_page(zone_id, page, query):
     return lst_itms
 
 
-@plugin.route('/user/login', name='/user/login')
+@plugin.route('/user/login', name='user_login')
 def user_login():
     """Login user with email already set in settings by creating and persisting a token."""
     return user.login(plugin)
 
 
-@plugin.route('/user/logout', name='/user/logout')
+@plugin.route('/user/logout', name='user_logout')
 def user_logout():
     """Discard token of user in settings."""
     return user.logout(plugin)

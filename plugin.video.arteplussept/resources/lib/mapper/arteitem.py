@@ -252,7 +252,7 @@ class ArteTvVideoItem(ArteVideoItem):
             prop_prefix = 'manifest'
         prop = f"{ia_name}.{prop_prefix}_headers"
         # li.setProperty(prop, f"User-Agent=(Windows NT 10.0; Win64; x64; rv:150.0)")
-        li.setProperty(prop, utils.ADDON_USERAGENT)
+        li.setProperty(prop, f"User-Agent={utils.ADDON_USERAGENT}")
         return li
 
     def _get_mpaa_age_rating(self):
@@ -274,7 +274,9 @@ class ArteTvVideoItem(ArteVideoItem):
         try:
             date_obj = datetime.datetime.strptime(datestr, '%Y-%m-%dT%H:%M:%S%z')
             date = date_obj.strftime("%Y-%m-%d")
-        except TypeError:
+        except (TypeError, ValueError) as e:
+            xbmc.log(f"arteitem._parse_date_artetv: failed to parse date '{datestr}': {e}",
+                     level=xbmc.LOGERROR)
             date = None
         return date
 

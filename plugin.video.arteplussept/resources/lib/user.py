@@ -70,15 +70,16 @@ def login_with_password(plugin):
         return False
 
     # get token for user and password
-    tokens = api.authenticate_in_arte(plugin, email, pwd)
-    if tokens is None:
+    token = api.authenticate_in_arte(plugin, email, pwd)
+    token = _normalize_and_anchor_expiry_date(token)
+    if token is None or not _is_future(token.get('expires_in')):
         xbmc.log('Authentication failed in arte', level=xbmc.LOGERROR)
         msg = f"{addon.getLocalizedString(30020)}"
         plugin.notify(msg=msg, image='error')
         return False
 
     # store token
-    set_cached_token(plugin, email, tokens)
+    set_cached_token(plugin, email, token)
     update_login_state_settings(plugin, email)
     msg = addon.getLocalizedString(30017).format(user=email)
     plugin.notify(msg=msg, image='info')
@@ -111,8 +112,8 @@ def want_to_continue_or_override_auth(plugin, new_user):
     # assuming that new user's email and old user's email are the same,
     # since token can be retrieved/is indexed by email.
     current_tkn = get_cached_token(plugin, new_user, True)
-    if _is_token_valid(current_tkn):
-        expiry_date = _get_expiry_date(current_tkn)
+    expiry_date = _get_expiry_date(current_tkn)
+    if _is_future(expiry_date):
         xbmc.log(f"\"{new_user}\" already authenticated until : {expiry_date or 'unknown'}")
         # notify user that current token might be replaced
         accept_to_replace = xbmcgui.Dialog().yesno(
@@ -173,13 +174,14 @@ def login_with_device_flow(plugin):
     show_device_login_dialog(user_code, verification_uri)
 
     # Step 3 - poll token endpoint
-    tokens = poll_device_token(device_code, interval)
-    if tokens is None:
+    token = poll_device_token(device_code, interval, device_info["expires_in"])
+    token = _normalize_and_anchor_expiry_date(token)
+    if token is None or not _is_future(token.get('expires_in')):
         plugin.notify(addon.getLocalizedString(30020), image='error')
         return False
 
     # Step 4 - retrieve email from personal data endpoint
-    user_data = api.get_personal_data(tokens)
+    user_data = api.get_personal_data(token)
     if user_data is None:
         xbmc.log('Failed to retrieve personal data from Arte API', level=xbmc.LOGERROR)
         plugin.notify(addon.getLocalizedString(30020), image='error')
@@ -192,7 +194,7 @@ def login_with_device_flow(plugin):
         return False
 
     # Step 5 - store token
-    set_cached_token(plugin, email, tokens)
+    set_cached_token(plugin, email, token)
     update_login_state_settings(plugin, email)
     msg = addon.getLocalizedString(30017).format(user=email)
     plugin.notify(msg=msg, image='info')
@@ -210,15 +212,16 @@ def show_device_login_dialog(user_code, verification_uri):
     )
 
 
-def poll_device_token(device_code, interval):
+def poll_device_token(device_code, interval, expires_in):
     """
     Poll ARTE token endpoint until:
     - authorization_pending
     - slow_down
-    - success (returns tokens)
+    - success (returns token)
     - error (returns None)
     """
-    while True:
+    deadline = time.monotonic() + expires_in
+    while time.monotonic() < deadline:
         data = api.device_token_request(device_code)
 
         if "access_token" in data:
@@ -227,16 +230,19 @@ def poll_device_token(device_code, interval):
         error = data.get("error")
 
         if error == "authorization_pending":
-            time.sleep(interval)
+            time.sleep(min(interval, max(0, deadline - time.monotonic())))
             continue
 
         if error == "slow_down":
             interval += 5
-            time.sleep(interval)
+            time.sleep(min(interval, max(0, deadline - time.monotonic())))
             continue
 
         xbmc.log(f"Device login error: {error}", level=xbmc.LOGERROR)
         return None
+
+    xbmc.log("Device login expired before authorization completed", level=xbmc.LOGERROR)
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -268,33 +274,60 @@ def update_login_state_settings(plugin, email):
     Update login state according to token validity of email's token
     """
     token = get_cached_token(plugin, email, True)
-    if _is_token_valid(token):
+    token = _normalize_and_anchor_expiry_date(token)
+    xbmc.log(f"Update login state for user {email}: {token.get('expires_in') if token else 'None'}")
+    if token and _is_future(token.get('expires_in')):
+        set_cached_token(plugin, email, token)
         message = addon.getLocalizedString(30017).format(user=email)
     else:
         message = addon.getLocalizedString(30018)
     addon.setSetting('login_acc', message)
 
 
+def _normalize_and_anchor_expiry_date(token):
+    """
+    Return token with normalized expiry date in date time iso format.
+    Return the token in parameter, potentially None
+    """
+    expiry_date = _get_expiry_date(token)
+    if isinstance(expiry_date, datetime.datetime):
+        token['expires_in'] = expiry_date.isoformat()
+    return token
+
+
 def _get_expiry_date(token):
     """
     Return token expiry date or None
     """
-    return token.get('expires_in', None) if isinstance(token, dict) else None
+    if not isinstance(token, dict):
+        return None
+
+    expires_in = token.get('expires_in')
+    creation_date = token.get('created')
+    expiry_date = expires_in  # default to expires_in if it's a datetime or None
+    if isinstance(expires_in, (int, float)):
+        if isinstance(creation_date, (int, float)):
+            expiry_date = datetime.datetime.fromtimestamp(
+                creation_date + expires_in, datetime.timezone.utc)
+        else:
+            xbmc.log("Token has no valid created timestamp, " +
+                     "assuming it expire_in is a timestamp on top of now",
+                     level=xbmc.LOGWARNING)
+            expiry_date = datetime.datetime.now(datetime.timezone.utc) + \
+                datetime.timedelta(seconds=expires_in)
+    elif isinstance(expires_in, str):
+        expiry_date = datetime.datetime.fromisoformat(expires_in)
+    # else let go through datetime and None
+    return expiry_date
 
 
-def _is_token_valid(token) -> bool:
+def _is_future(dt) -> bool:
     """
-    Return True if the token is not None and has not yet expired
-    """
-    return _is_future(_get_expiry_date(token))
-
-
-def _is_future(ts) -> bool:
-    """
-    Return True if ts is in future, False otherzise e.g. None
+    Return True if ts is in future, False otherwise e.g. None
     """
     try:
-        dt = datetime.datetime.fromisoformat(ts)
+        if isinstance(dt, (str)):
+            dt = datetime.datetime.fromisoformat(dt)
         now = datetime.datetime.now(datetime.timezone.utc)
         return dt > now
     # pylint: disable=broad-exception-caught
@@ -313,18 +346,19 @@ def get_cached_token(plugin, token_idx, silent=False):
     """
     cached_token = plugin.get_storage(_STORAGE_KEY, ttl=_TTL)
     if token_idx in cached_token and isinstance(cached_token[token_idx], dict):
-        tokens = cached_token[token_idx]
+        token = cached_token[token_idx]
     else:
-        tokens = None
+        token = None
         if not silent:
             plugin.notify(msg=addon.getLocalizedString(30014), image='warning')
-    return tokens
+    return token
 
 
-def set_cached_token(plugin, token_idx, tokens):
+def set_cached_token(plugin, email, token):
     """Set cached token"""
     cached_token = plugin.get_storage(_STORAGE_KEY)
-    cached_token[token_idx] = tokens
+    cached_token[email] = token
+    addon.setSetting('username', email)
 
 
 def clear_cached_tokens(plugin):
@@ -339,5 +373,4 @@ def erase_password_in_old_config():
     to authenticate user.
     Deprecated since creation JUL2023, v1.3.0.
     """
-    return addon.setSetting('password', '') and \
-        addon.setSetting('username', '')
+    return addon.setSetting('password', '')

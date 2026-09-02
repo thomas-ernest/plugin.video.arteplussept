@@ -4,9 +4,9 @@
 """
 import urllib.parse
 
-_PLUGIN_NAME = "Arte +7"
+_PLUGIN_NAME = "kodi.plugin.video.arteplussept"
 _PLUGIN_VERSION = "2.0.0"
-ADDON_USERAGENT = f"{_PLUGIN_NAME}/{_PLUGIN_VERSION}"
+ADDON_USERAGENT = f"{_PLUGIN_NAME}%2F{_PLUGIN_VERSION}"
 
 
 def encode_string(string):

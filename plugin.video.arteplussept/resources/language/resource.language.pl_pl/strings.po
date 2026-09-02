@@ -91,7 +91,7 @@ msgstr "Brak hasła"
 
 msgctxt "#30046"
 msgid "Login with Smart TV code on another device"
-msgstr „Zaloguj się przy użyciu kodu Smart TV na innym urządzeniu”
+msgstr "Zaloguj się przy użyciu kodu Smart TV na innym urządzeniu"
 
 msgctxt "#30047"
 msgid "Login with email & password"
@@ -133,6 +133,10 @@ msgstr "Nie udało się usunąć \"{label}\" z ulubionych"
 msgctxt "#30029"
 msgid "Stream \"{strm}\" in \"{ln}\" is not available"
 msgstr "Strumień \"{strm}\" w języku \"{ln}\" jest niedostępny"
+
+msgctxt "#30034"
+msgid "Cannot play stream \"{strm}\" because of missing or misconfigured inputstream.adaptative"
+msgstr "Nie można odtworzyć strumienia \"{strm}\" z powodu braku lub nieprawidłowej konfiguracji inputstream.adaptative"
 
 msgctxt "#30030"
 msgid "Purge my history"
