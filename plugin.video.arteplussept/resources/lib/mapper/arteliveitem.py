@@ -65,7 +65,8 @@ class ArteLiveItem(ArteTvVideoItem):
         streams = attr.get('streams', [])
         if len(streams) > 0 and streams[0].get('url'):
             path = streams[0].get('url')
-            live_item.setPath(path)
+            live_item.setPath(self.plugin.url_for(
+                'play_live', stream_url=path, mpaa=mpaa))
             live_item.addContextMenuItems([(
                 self.plugin.addon.getLocalizedString(30060),
                 actions.background(self.plugin.url_for(

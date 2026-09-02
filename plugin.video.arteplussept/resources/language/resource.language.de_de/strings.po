@@ -134,6 +134,10 @@ msgctxt "#30029"
 msgid "Stream \"{strm}\" in \"{ln}\" is not available"
 msgstr "Stream \"{strm}\" in \"{ln}\" ist nicht verfügbar"
 
+msgctxt "#30034"
+msgid "Cannot play stream \"{strm}\" because of missing or misconfigured inputstream.adaptative"
+msgstr "Stream \"{strm}\" kann wegen fehlendem oder falsch konfiguriertem inputstream.adaptative nicht abgespielt werden"
+
 msgctxt "#30030"
 msgid "Purge my history"
 msgstr "Lösche mein Videoverlauf"

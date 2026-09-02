@@ -14,7 +14,7 @@ ARTETV_ENDPOINTS = {
     # POST
     'token': '/sso/v3/token',
     # needs token in authorization header
-    'get_favorites': '/sso/v3/favorites/{lang}?page={page}&limit={limit}',
+    'get_favorites': '/sso/v3/favorites/{lang}',
     # PUT
     # needs token in authorization header
     'add_favorite': '/sso/v3/favorites',
@@ -25,7 +25,7 @@ ARTETV_ENDPOINTS = {
     # needs token in authorization header
     'purge_favorites': '/sso/v3/favorites/purge',
     # needs token in authorization header
-    'get_last_viewed': '/sso/v3/lastvieweds/{lang}?page={page}&limit={limit}',
+    'get_last_viewed': '/sso/v3/lastvieweds/{lang}',
     # PUT
     # needs token in authorization header
     # payload {'programId':'110342-012-A','timecode':574} for 574s i.e. 9:34
@@ -46,12 +46,9 @@ ARTETV_ENDPOINTS = {
     # keep path and url in a snigle place for readibility
     # page_id=SEARCH, HOME...
     'zone':
-        '/emac/v4/{lang}/{client}/zones/{zone_id}/content?' +
-        'abv=A&authorizedCountry={country}&page={page}&pageId={page_id}&' +
-        'query={query}&zoneIndexInPage=0',
+        '/emac/v4/{lang}/{client}/zones/{zone_id}/content',
     'zonepage':
-        '/emac/v4/{lang}/{client}/zones/{zone_id}/content?' +
-        'authorizedCountry={country}&page={page}',
+        '/emac/v4/{lang}/{client}/zones/{zone_id}/content',
     # not yet impl.
     # date=2023-01-17
     # 'guide_tv': '/emac/v3/{lang}/{client}/pages/TV_GUIDE/?day={DATE}',
@@ -79,9 +76,9 @@ SMART_TV_CLIENT_ID = 'smart-tv'
 
 def get_favorites(lang, tkn, page_idx, page_size=50):
     """Retrieve favorites from a personal account."""
-    url = _ARTETV_URL + ARTETV_ENDPOINTS['get_favorites'].format(
-        lang=lang, page=page_idx, limit=page_size)
-    return _load_json_personal_content('artetv_getfavorites', url, tkn)
+    url = _ARTETV_URL + ARTETV_ENDPOINTS['get_favorites'].format(lang=lang)
+    params = {'page': page_idx, 'limit': page_size}
+    return _load_json_personal_content('artetv_getfavorites', url, tkn, params=params)
 
 
 def add_favorite(tkn, program_id, language):
@@ -120,9 +117,9 @@ def purge_favorites(tkn):
 
 def get_last_viewed(lang, tkn, page_idx, page_size=50):
     """Retrieve content recently watched by a user."""
-    url = _ARTETV_URL + ARTETV_ENDPOINTS['get_last_viewed'].format(
-        lang=lang, page=page_idx, limit=page_size)
-    return _load_json_personal_content('artetv_lastviewed', url, tkn)
+    url = _ARTETV_URL + ARTETV_ENDPOINTS['get_last_viewed'].format(lang=lang)
+    params = {'page': page_idx, 'limit': page_size}
+    return _load_json_personal_content('artetv_lastviewed', url, tkn, params=params)
 
 
 def get_last_viewed_all(lang, tkn):
@@ -181,7 +178,7 @@ def get_personal_data(tkn):
     Returns the user data dict from API response or None if request fails.
     """
     url = _ARTETV_URL + ARTETV_ENDPOINTS['personal_data']
-    reply = _load_json_personal_content('artetv_getpersonaldata', url, tkn)
+    reply = _load_json_personal_content('artetv_getpersonaldata', url, tkn, redact_body=True)
     if reply is not None and isinstance(reply.get('data'), list) and len(reply.get('data', [])) > 0:
         return reply['data'][0]
     return None
@@ -270,9 +267,11 @@ def get_search_page(lang, zone_id, page_idx, query):
     Navigate in pages of a search identified by zone_id.
     """
     url = _ARTETV_URL + ARTETV_ENDPOINTS['zone'].format(
-        lang=lang, client='tv', zone_id=zone_id, country=lang.upper(), page=page_idx,
-        page_id='SEARCH', query=query)
-    return _load_json_full_url('artetv_getsearchpage', url, ARTETV_HEADERS)
+        lang=lang, client='tv', zone_id=zone_id)
+    params = {
+        'authorizedCountry': lang.upper(), 'page': page_idx, 'pageId': 'SEARCH',
+        'query': query, 'abv': 'A', 'zoneIndexInPage': 0}
+    return _load_json_full_url('artetv_getsearchpage', url, ARTETV_HEADERS, params)
 
 
 def get_zone_page(lang, zone_id, page_idx):
@@ -285,27 +284,29 @@ def get_zone_page(lang, zone_id, page_idx):
     if len(parts) == 2 and parts[0] == parts[1]:
         zone_id = parts[0]
     url = _ARTETV_URL + ARTETV_ENDPOINTS['zonepage'].format(
-        lang=lang, client='tv', zone_id=zone_id, country=lang.upper(), page=page_idx)
-    return _load_json_full_url('artetv_getzonepage', url, ARTETV_HEADERS)
+        lang=lang, client='tv', zone_id=zone_id)
+    params = {'authorizedCountry': lang.upper(), 'page': page_idx}
+    return _load_json_full_url('artetv_getzonepage', url, ARTETV_HEADERS, params)
 
 
-def _load_json_full_url(request_scope, url, headers=None, params=None):
+def _load_json_full_url(request_scope, url, headers=None, params=None, redact_body=False):
     if headers is None:
         headers = LIGHT_HEADERS
     # https://requests.readthedocs.io/en/latest/
     reply = requests.get(url, headers=headers, params=params, timeout=10)
-    logger.log_json(reply, request_scope)
+    logger.log_json(reply, request_scope, redact_body)
     return reply.json(object_pairs_hook=OrderedDict)
 
 
-def _load_json_personal_content(request_scope, url, tkn, hdrs=None):
+# pylint: disable=too-many-arguments, too-many-positional-arguments
+def _load_json_personal_content(request_scope, url, tkn, hdrs=None, params=None, redact_body=False):
     """Get a bearer token and add it in headers before sending the request"""
     if hdrs is None:
         hdrs = ARTETV_HEADERS
     headers = _add_auth_token(tkn, hdrs)
     if not headers:
         return None
-    return _load_json_full_url(request_scope, url, headers)
+    return _load_json_full_url(request_scope, url, headers, params, redact_body)
 
 
 # Get a bearer token and add it as HTTP header authorization
@@ -324,8 +325,7 @@ def authenticate_in_arte(plugin, username='', password='', headers=None):
     """Return None if authentication failed and display an error notification
     Return arte reply with access and refresh tokens if authentication was successfull
     (i.e. status 200, no exception)"""
-    if headers is None:
-        headers = ARTETV_HEADERS
+    headers = (headers or ARTETV_HEADERS).copy()
     # set client to web, because with tv get error client_invalid, error Client not authorized
     headers['client'] = 'web'
 
@@ -342,9 +342,7 @@ def authenticate_in_arte(plugin, username='', password='', headers=None):
     try:
         # https://requests.readthedocs.io/en/latest/
         reply = requests.post(url, data=token_data, headers=headers, timeout=10)
-        # uncomment the next line will disclose your credentials in addon logs
-        # do it temporarely and if necessary and clarify how to clean-up addon logs first
-        # logger.log_json(reply, 'artetv_auth_password')
+        logger.log_json(reply, 'artetv_auth_password', True)
     except requests.exceptions.ConnectionError as err:
         # unable to auth. e.g.
         # HTTPSConnectionPool(host='api.arte.tv', port=443):
@@ -375,7 +373,7 @@ def device_authorization_request():
         }
 
         resp = requests.post(DEVICE_AUTH_URL, data=payload, headers=headers, timeout=10)
-        logger.log_json(resp, 'artetv_deviceauth')
+        logger.log_json(resp, 'artetv_deviceauth', True)
         if resp.status_code != 200:
             xbmc.log(f"Device authorization failed: HTTP {resp.status_code}", level=xbmc.LOGERROR)
             return None
@@ -408,9 +406,7 @@ def device_token_request(device_code):
         }
 
         resp = requests.post(DEVICETOKEN_URL, data=payload, headers=headers, timeout=10)
-        # uncomment the next line will disclose your credentials in addon logs
-        # do it temporarely and if necessary and clarify how to clean-up addon logs first
-        # logger.log_json(resp, 'artetv_auth_devicetoken')
+        logger.log_json(resp, 'artetv_auth_devicetoken', True)
         return resp.json()
 
     # pylint: disable=broad-except

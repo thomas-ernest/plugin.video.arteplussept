@@ -7,205 +7,204 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: it_IT\n"
+"Language: es_ES\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgctxt "#30044"
 msgid "General"
-msgstr "Generale"
+msgstr "General"
 
 msgctxt "#30045"
 msgid "Profile"
-msgstr "Profilo"
+msgstr "Perfil"
 
 msgctxt "#30050"
 msgid "Language (Videos)"
-msgstr "Lingua (Video)"
+msgstr "Idioma (vídeos)"
 
 msgctxt "#30054"
 msgid "Email"
-msgstr "Indirizzo email"
+msgstr "Correo electrónico"
 
 msgctxt "#30056"
 msgid "Log level"
-msgstr "Log level"
+msgstr "Nivel de registro"
 
 msgctxt "#30057"
 msgid "Log in"
-msgstr "Per accedere"
+msgstr "Iniciar sesión"
 
 msgctxt "#30058"
 msgid "Log out"
-msgstr "Disconnessione"
+msgstr "Cerrar sesión"
 
 
 msgctxt "#30011"
 msgid "View collection as menu"
-msgstr "Visualizza la raccolta come menu"
+msgstr "Ver la colección como menú"
 
 
 msgctxt "#30012"
 msgid "Search"
-msgstr "Search"
+msgstr "Buscar"
 
 
 msgctxt "#30014"
 msgid "Authentication needed in addon settings"
-msgstr "Autenticazione necessaria nelle impostazioni del componente aggiuntivo"
+msgstr "Se necesita autenticación en los ajustes del complemento"
 
 msgctxt "#30015"
 msgid "User already logged in"
-msgstr "Utente già loggato"
+msgstr "El usuario ya ha iniciado sesión"
 
 msgctxt "#30016"
 msgid "Do you want to log in as \"{new_user}\" instead of \"{old_user}\" ?"
-msgstr "Vuoi accedere come \"{new_user}\" invece che come \"{old_user}\" ?"
+msgstr "¿Quieres iniciar sesión como \"{new_user}\" en lugar de \"{old_user}\"?"
 
 msgctxt "#30017"
 msgid "Logged in as \"{user}\""
-msgstr "Effettuato l'accesso come \"{user}\""
+msgstr "Sesión iniciada como \"{user}\""
 
 msgctxt "#30018"
 msgid "Logged out"
-msgstr "Disconnesso"
+msgstr "Sesión cerrada"
 
 msgctxt "#30013"
 msgid "Enter email please :"
-msgstr "Inserisci la email per favore:"
+msgstr "Introduce tu correo electrónico:"
 
 msgctxt "#30019"
 msgid "Enter password please:"
-msgstr "Inserisci la password per favore:"
+msgstr "Introduce tu contraseña:"
 
 msgctxt "#30020"
 msgid "Unable to authenticate"
-msgstr "Impossibile autenticare"
+msgstr "No se ha podido autenticar"
 
 msgctxt "#30021"
 msgid "Email missing"
-msgstr "Email mancanti"
+msgstr "Falta el correo electrónico"
 
 msgctxt "#30022"
 msgid "Password missing"
-msgstr "Password mancanti"
+msgstr "Falta la contraseña"
 
 msgctxt "#30046"
 msgid "Login with Smart TV code on another device"
-msgstr "Accedi con il codice Smart TV su un altro dispositivo"
+msgstr "Iniciar sesión con el código de Smart TV en otro dispositivo"
 
 msgctxt "#30047"
 msgid "Login with email & password"
-msgstr "Accedi con email e password"
+msgstr "Iniciar sesión con correo electrónico y contraseña"
 
 msgctxt "#30048"
 msgid "ARTE Smart TV Login"
-msgstr "Accesso a Smart TV ARTE"
+msgstr "Inicio de sesión de ARTE Smart TV"
 
 msgctxt "#30049"
 msgid "Enter the code \"{user_code}\" at \"{verification_uri}\" on your mobile device or computer."
-msgstr "Inserisci il codice \"{user_code}\" su \"{verification_uri}\" dal tuo dispositivo mobile o computer."
+msgstr "Introduce el código \"{user_code}\" en \"{verification_uri}\" desde tu dispositivo móvil u ordenador."
 
 
 msgctxt "#30023"
 msgid "Add to Arte favorites"
-msgstr "Aggiungi ai preferiti di Arte"
+msgstr "Añadir a favoritos de Arte"
 
 msgctxt "#30024"
 msgid "Remove from Arte favorites"
-msgstr "Rimuovi dai preferiti di Arte"
+msgstr "Eliminar de favoritos de Arte"
 
 msgctxt "#30025"
 msgid "\"{label}\" successfully added to favorites"
-msgstr "\"{label}\" aggiunto con successo ai preferiti"
+msgstr "\"{label}\" se ha añadido a favoritos correctamente"
 
 msgctxt "#30026"
 msgid "Failed to add \"{label}\" to favorites"
-msgstr "Impossibile aggiungere \"{label}\" ai preferiti"
+msgstr "No se ha podido añadir \"{label}\" a favoritos"
 
 msgctxt "#30027"
 msgid "\"{label}\" successfully removed from favorites"
-msgstr "\"{label}\" rimozione riuscita dai preferiti"
+msgstr "\"{label}\" se ha eliminado de favoritos correctamente"
 
 msgctxt "#30028"
 msgid "Failed to remove \"{label}\" from favorites"
-msgstr "Impossibile rimuovere \"{label}\" dai preferiti"
+msgstr "No se ha podido eliminar \"{label}\" de favoritos"
 
 msgctxt "#30029"
 msgid "Stream \"{strm}\" in \"{ln}\" is not available"
-msgstr "Lo streaming \"{strm}\" in \"{ln}\" non è disponibile"
+msgstr "La emisión \"{strm}\" en \"{ln}\" no está disponible"
 
 msgctxt "#30034"
 msgid "Cannot play stream \"{strm}\" because of missing or misconfigured inputstream.adaptative"
-msgstr "Impossibile riprodurre lo streaming \"{strm}\" a causa dell'assenza o della configurazione errata di inputstream.adaptative"
-
+msgstr "No se puede reproducir la emisión \"{strm}\" debido a la ausencia o a una configuración incorrecta de inputstream.adaptative"
 
 msgctxt "#30030"
 msgid "Purge my history"
-msgstr "Elimina la cronologia"
+msgstr "Borrar mi historial"
 
 msgctxt "#30031"
 msgid "Successfully purged history"
-msgstr "Cronologia eliminata correttamente"
+msgstr "Historial borrado correctamente"
 
 msgctxt "#30032"
 msgid "Failed to purge my history"
-msgstr "Impossibile eliminare la cronologia"
+msgstr "No se ha podido borrar mi historial"
 
 msgctxt "#30033"
 msgid "Do you really want to purge your history ?"
-msgstr "Vuoi davvero eliminare la tua storia ?"
+msgstr "¿Quieres borrar tu historial?"
 
 
 msgctxt "#30035"
 msgid "Mark as watched in Arte"
-msgstr "Segna come guardato in Arte"
+msgstr "Marcar como visto en Arte"
 
 msgctxt "#30036"
 msgid "\"{label}\" successfully marked as watched"
-msgstr "\"{label}\" contrassegnato con successo come guardato"
+msgstr "\"{label}\" se ha marcado como visto correctamente"
 
 msgctxt "#30037"
 msgid "Failed to mark as watched \"{label}\""
-msgstr "Impossibile contrassegnare come guardato \"{label}\""
+msgstr "No se ha podido marcar \"{label}\" como visto"
 
 
 msgctxt "#30038"
 msgid "Next page"
-msgstr "Pagina successiva"
+msgstr "Página siguiente"
 
 msgctxt "#30039"
 msgid "Previous page"
-msgstr "Pagina precedente"
+msgstr "Página anterior"
 
 
 msgctxt "#30040"
 msgid "Purge my Arte favorites"
-msgstr "Elimina i miei preferiti di Arte"
+msgstr "Borrar mis favoritos de Arte"
 
 msgctxt "#30041"
 msgid "Successfully purged favorites"
-msgstr "Preferiti eliminati correttamente"
+msgstr "Favoritos borrados correctamente"
 
 msgctxt "#30042"
 msgid "Failed to purge favorites"
-msgstr "Impossibile eliminare i preferiti"
+msgstr "No se han podido borrar los favoritos"
 
 msgctxt "#30043"
 msgid "Do you really want to purge Arte favorites ?"
-msgstr "Vuoi davvero eliminare i preferiti di Arte ?"
+msgstr "¿Quieres borrar tus favoritos de Arte?"
 
 msgctxt "#30055"
 msgid "{label} - This program contains scenes not suitable for young or sensitive audience"
-msgstr "{label} - Questo programma contiene scene sconsigliate ad un pubblico giovane o sensible"
+msgstr "{label} - Este programa contiene escenas no recomendadas para un público joven o sensible"
 
 msgctxt "#30060"
 msgid "Play from the start"
-msgstr "Gioca dall'inizio"
+msgstr "Reproducir desde el principio"
 
 
 msgctxt "#30061"
 msgid "Version {version} installed successfully"
-msgstr "Versione {version} installata correttamente"
+msgstr "La versión {version} se ha instalado correctamente"
 
 msgctxt "#30062"
 msgid ""
@@ -213,6 +212,6 @@ msgid ""
 "Donations: https://thomas-ernest.github.io/\n"
 "Bugs or feature requests: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"
 msgstr ""
-"Goditi i video di Arte su Kodi con Arte+7 {version}.\n"
-"Donazioni: https://thomas-ernest.github.io/\n"
-"Segnalazioni di bug o richieste: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"
+"Disfruta de los vídeos de Arte en Kodi con Arte+7 {version}.\n"
+"Donaciones: https://thomas-ernest.github.io/\n"
+"Errores o solicitudes de funciones: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"

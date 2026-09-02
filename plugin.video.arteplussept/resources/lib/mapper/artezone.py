@@ -39,7 +39,10 @@ class ArteZone(ArteCollection):
         if isinstance(data, list) and len(data) >= 1:
             valid_count = 0
             for item in data:
-                item_kind = (item or {}).get("kind", {}).get("code")
+                # kind may be a string or a dict with code key.
+                item_kind = (item or {}).get("kind", {})
+                if isinstance(item_kind, dict):
+                    item_kind = item_kind.get("code")
                 if item_kind != 'EXTERNAL':
                     valid_count = valid_count + 1
                 else:

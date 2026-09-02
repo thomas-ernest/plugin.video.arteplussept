@@ -116,15 +116,33 @@ class RoutingMixin:
         })
 
         if self.handle is not None:
-            if isinstance(result, list):
-                for item in result:
-                    path = item.getPath()
-                    is_playable = item.getProperty('is_playable') == 'True'
-                    xbmcplugin.addDirectoryItem(
-                        handle=self.handle, url=path, listitem=item, isFolder=not is_playable)
-                xbmcplugin.endOfDirectory(self.handle)
-            elif isinstance(result, xbmcgui.ListItem):
-                xbmcplugin.setResolvedUrl(self.handle, True, result)
+            self._post_process_result(result)
+
+    def _post_process_result(self, result):
+        """Post-process a route result for the active Kodi handle.
+
+        Lists populate a directory, ListItems resolve playback, True signals
+        a successfully handled non-directory action, and None signals an
+        unsuccessful or incomplete route.
+        """
+        handle = self.handle
+        if handle is None:
+            return
+        if isinstance(result, list):
+            for item in result:
+                path = item.getPath()
+                is_playable = item.getProperty('is_playable') == 'True'
+                xbmcplugin.addDirectoryItem(
+                    handle=handle, url=path, listitem=item, isFolder=not is_playable)
+            xbmcplugin.endOfDirectory(handle)
+        elif isinstance(result, xbmcgui.ListItem):
+            xbmcplugin.setResolvedUrl(handle, True, result)
+        elif result is True:
+            xbmcplugin.endOfDirectory(
+                handle, succeeded=True, updateListing=False)
+        elif result is None or result is False:
+            xbmcplugin.endOfDirectory(
+                handle, succeeded=False, updateListing=False)
 
 
 # pylint: disable=too-few-public-methods
@@ -156,19 +174,28 @@ class StorageMixin:
     def get_storage(self, key, ttl=None):
         """File-backed storage with TTL support (TTL in minutes)."""
         if key in self._storage:
-            return self._storage[key]
+            storage = self._storage[key]
+            created = storage.created
+            if ttl is None or created is None \
+                    or int(time.time()) - created <= int(ttl) * 60:
+                return storage
+            storage = storage.__class__(storage.path, {}, None)
+            self._storage[key] = storage
+            return storage
 
         file_path = self._storage_file_path(key)
 
         class FileStorageDict(dict):
             """Dictionary that automatically saves to a JSON file on changes."""
-            def __init__(self, path, initial):
+            def __init__(self, path, initial, created):
                 super().__init__(initial or {})
-                self._path = path
+                self.path = path
+                self.created = created
 
             def _save(self):
-                payload = {'created': int(time.time()), 'value': dict(self)}
-                with xbmcvfs.File(self._path, 'w') as handle:
+                self.created = int(time.time())
+                payload = {'created': self.created, 'value': dict(self)}
+                with xbmcvfs.File(self.path, 'w') as handle:
                     handle.write(json.dumps(payload))
 
             def __setitem__(self, key_name, value):
@@ -192,7 +219,7 @@ class StorageMixin:
                 self._save()
                 return value
 
-        storage = FileStorageDict(file_path, {})
+        storage = FileStorageDict(file_path, {}, None)
         if xbmcvfs.exists(file_path):
             with xbmcvfs.File(file_path, 'r') as handle:
                 content = handle.read()
@@ -202,7 +229,7 @@ class StorageMixin:
                 value = data.get('value', {})
                 if ttl is not None and int(time.time()) - created > int(ttl) * 60:
                     value = {}
-                storage = FileStorageDict(file_path, value)
+                storage = FileStorageDict(file_path, value, created)
 
         # try:
         #     storage._save()

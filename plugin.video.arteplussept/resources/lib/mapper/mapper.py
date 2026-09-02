@@ -165,7 +165,7 @@ def build_playable_playlist(playlist):
     Convert a list of listitem into a playable video playlist
     """
     # Empty playlist, otherwise requested video is present twice in the playlist
-    xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
+    # xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
     pl = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
     for item in playlist or []:
         pl.add(item.getPath(), item)

@@ -56,7 +56,7 @@ class ArteHistory(ArteCollection):
         in order to mark a program as watched
         """
         status = -1
-        lang = self.settings.languages[0]
+        lang = self.settings.language
         usr = self.settings.username
         program_info = api.player_video(lang, program_id)
         total_time = program_info.get('attributes').get('metadata').get('duration').get('seconds')

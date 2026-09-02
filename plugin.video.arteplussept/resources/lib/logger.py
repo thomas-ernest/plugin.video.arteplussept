@@ -10,7 +10,7 @@ from resources.lib.native_plugin import Plugin
 from . import settings
 
 
-def log_json(reply, log_suffix):
+def log_json(reply, log_suffix, redact_body=False):
     """save request and response in reply into a file
     with file name containing log_suffix in addon user data
     if loglevel settings is set to API.
@@ -31,11 +31,11 @@ def log_json(reply, log_suffix):
         log_file.write("---------------- request ----------------\n")
         log_file.write(f"{reply.request.method} {reply.request.url}\n")
         log_file.write(f"{reqhdrs}\n")
-        log_file.write(f"payload : {reply.request.body}\n")
+        log_file.write(f"payload : {'<redacted>' if redact_body else reply.request.body}\n")
         log_file.write("---------------- response ----------------\n")
         log_file.write(f"{reply.status_code} {reply.reason} {reply.url}\n")
         log_file.write(f"{reshdrs}\n")
-        log_file.write(f"payload : {reply.text}")
+        log_file.write(f"payload : {'<redacted>' if redact_body else reply.text}")
 
 
 def log_xbmc(payload, log_suffix):
@@ -90,10 +90,14 @@ def format_headers(headers) -> str:
 
 def _is_sensitive_field(key):
     """Determine if a field name is considered sensitive and should be redacted."""
-    normalized = str(key).lower().replace('-', '').replace('_', '')
+    normalized = str(key).lower().replace('-', '').replace('_', '').replace(' ', '')
     return (
-        normalized in ['password', 'pwd', 'secret', 'email', 'username', 'user', 'login',
-                       'authorization', 'proxy-authorization', 'cookie', 'set-cookie', 'x-api-key']
+        # no upper case, no dash, no underscore, no space in the list of sensitive fields
+        # because the key is normalized before checking
+        normalized in ['password', 'pwd', 'secret', 'email', 'mail', 'username', 'user', 'login',
+                       'uid', 'userid', 'usercode', 'devicecode',
+                       'authorization', 'proxyauthorization', 'cookie', 'setcookie', 'xapikey',
+                       ]
         or normalized.endswith('token')
     )
 
