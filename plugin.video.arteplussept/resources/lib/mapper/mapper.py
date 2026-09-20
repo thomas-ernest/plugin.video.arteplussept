@@ -22,7 +22,10 @@ def build_video_from_program(plugin, settings, prgm_id, col_id=None):
             path = build_path_for_playlist(full_prgm)
     if path:
         prgm_attr = full_prgm.get('attributes', {}).get('metadata', {})
-        return ArteTvVideoItem(plugin, prgm_attr).build_item(path, True)
+        builder = ArteTvVideoItem(plugin, prgm_attr)
+        li = builder.build_item(path, True)
+        builder.set_tracking_properties(li, full_prgm.get('attributes', {}).get('stat', {}))
+        return li
     return None
 
 

@@ -9,7 +9,6 @@ from resources.lib.utils import ADDON_USERAGENT
 
 # Arte TV API - Used on Arte TV website
 _ARTETV_URL = 'https://api.arte.tv/api'
-_ARTETV_AUTH_URL = 'https://auth.arte.tv/ssologin'
 ARTETV_ENDPOINTS = {
     # POST
     'token': '/sso/v3/token',
@@ -65,13 +64,16 @@ ARTETV_HEADERS = {
     # required for Arte TV API. values like web, app, tv, orange, free
     # prefer client tv over web so that Arte adapt content to tv limiting links for instance
     'client': 'tv',
-    'accept': 'application/json'
+    'accept': 'application/json',
+    'content-type': 'application/json',
 }
 
 _ARTETV_ID_URL = 'https://id.arte.tv/auth/realms/myarte-prod/protocol/openid-connect'
 DEVICE_AUTH_URL = f"{_ARTETV_ID_URL}/auth/device"
 DEVICETOKEN_URL = f"{_ARTETV_ID_URL}/token"
 SMART_TV_CLIENT_ID = 'smart-tv'
+
+_ARTE_TRACKING_URL = 'https://event.arte.tv/api/server-side-tracking/v1/tracking'
 
 
 def get_favorites(lang, tkn, page_idx, page_size=50):
@@ -160,6 +162,162 @@ def sync_last_viewed(tkn, program_id, time):
     reply = requests.put(url, data=data, headers=headers, timeout=10)
     logger.log_json(reply, 'artetv_synchlastviewed')
     return reply.status_code
+
+
+def _map_program_data(program_data):
+    """Convert the program metadata dictionary into the Arte tracking context."""
+    missing_program_fields = [
+        key for key in ('program_id', 'stream_url', 'title')
+        if key not in program_data or program_data[key] in (None, '')
+    ]
+    if missing_program_fields:
+        raise ValueError(
+            'program_data is missing required tracking fields: ' + ', '.join(missing_program_fields)
+        )
+    emac_content = {
+        'id': program_data.get('program_id'),
+        'slug': program_data.get('slug'),
+        'category': program_data.get('category'),
+        'subcategory': program_data.get('subcategory'),
+        'kind': program_data.get('kind'),
+    }
+    emac_page = {
+        'abv': 'A',
+        'id': 'PROGRAM',
+        'language': program_data.get('page_language'),
+        'url': program_data.get('page_url'),
+        'category': None,
+        'subcategory': None,
+        'query': None,
+    }
+
+    # ensure associated_collections is a list, empty list if not provided properlly
+    associated_collections = program_data.get('associated_collections') or []
+    if not isinstance(associated_collections, list):
+        associated_collections = []
+
+    player_context = {
+        'id': program_data.get('program_id'),
+        'slug': program_data.get('slug'),
+        'programType': program_data.get('program_type'),
+        'category': program_data.get('category'),
+        'subcategory': program_data.get('subcategory'),
+        'kind': program_data.get('kind'),
+        'duration': program_data.get('duration', None),
+        'associatedCollections': associated_collections,
+        'imageFormat': program_data.get('image_format', 'HORIZONTAL'),
+    }
+
+    genre = program_data.get('genre')
+    if genre not in (None, ''):
+        try:
+            player_context['genre'] = int(genre)
+        except (TypeError, ValueError):
+            pass
+
+    return {
+        'emac': {
+            'content': emac_content,
+            'page': emac_page,
+        },
+        'player': player_context,
+    }
+
+
+def _map_client_data(client_data):
+    """Convert the client metadata dictionary into the Arte tracking client payload."""
+    missing_client_fields = [
+        key for key in ('client_id', 'app_name', 'app_version', 'platform', 'locale',
+                        'consent', 'user')
+        if key not in client_data or client_data[key] is None
+    ]
+    if missing_client_fields:
+        raise ValueError(
+            'client_data is missing required tracking fields: ' + ', '.join(missing_client_fields)
+        )
+
+    consent_value = bool(client_data['consent'])
+    return {
+        'abv': 'A',
+        # official arte tv app name needed to be tracked remotely
+        'app': {
+            'name': "Replay - production",
+            'version': "2.15.4",
+            'build': "3b3126d",
+        },
+        'consent': {
+            'audience': consent_value,
+            'push': consent_value,
+            'technical': consent_value,
+        },
+        'id': 'be840c81-65d7-45e5-94fc-fa959a1606ca',
+        'language': client_data['locale'],
+        'user': client_data['user'],
+    }
+
+
+def track_playback(token, client_data, program_data, playback_data):
+    """
+    Submit a playback event to Arte's server-side tracking API.
+
+    Arte expects one structured event whose content is split into four logical
+    objects so the payload stays readable and each part has a clear ownership:
+
+
+    - client_data: client identity, localization and consent. This object is
+      used for the browser/app context and for consent flags sent to the API.
+    - program_data: static metadata about the program being watched.
+      Typical fields include program_id, title, slug, category, duration,
+      stream_url and optional media metadata. The stream URL is preserved in the
+      final JSON as the camelCase `streamUrl` field.
+    - playback_data: live playback state for the current event. Expected fields
+      include action, timecode, previous_timecode and state. The add-on builds
+      this from Kodi's player callbacks at runtime.
+
+    The function converts the Python-style snake_case dictionaries into the JSON
+    structure expected by the tracking API and sends the request as JSON.
+
+    :param client_data: Ordered mapping or dict with client and consent fields.
+    :param program_data: Ordered mapping or dict with static program metadata.
+    :param playback_data: Ordered mapping or dict with current playback state.
+    :return: requests.Response when the call succeeds, otherwise None.
+    """
+    if not all([client_data, program_data, playback_data]):
+        raise ValueError('track_playback requires all input parameters')
+
+    payload = {
+        'action': playback_data['action'],
+        'apiContext': _map_program_data(program_data),
+        'client': _map_client_data(client_data),
+        'frontendContext': {
+            'player': {
+                'audioTrackLanguage': playback_data.get('audio_track_language'),
+                'audioTrackType': playback_data.get('audio_track_type', 'STANDARD'),
+                'playbackMode': 'DEVICE',
+                'previousTimecode': int(playback_data['previous_timecode']),
+                'soundMuted': bool(playback_data.get('sound_muted', False)),
+                'streamUrl': program_data['stream_url'],
+                'subtitlesTrackLanguage': playback_data.get('subtitles_track_language'),
+                'subtitlesTrackType': playback_data.get('subtitles_track_type'),
+                'timecode': int(playback_data['timecode']),
+            },
+        },
+        'source': {
+            'referrer': '',
+        },
+        'time': playback_data['event_time'],
+        'type': 'PLAYBACK',
+
+    }
+    headers = _add_auth_token(token, ARTETV_HEADERS)
+
+    try:
+        reply = requests.post(_ARTE_TRACKING_URL, json=payload, headers=headers, timeout=10)
+        logger.log_json(reply, 'artetv_trackplayback')
+        return reply
+    except requests.exceptions.RequestException as err:
+        xbmc.log(f"Unable to send Arte playback tracking event: {err}", level=xbmc.LOGERROR)
+        return None
 
 
 def purge_last_viewed(tkn):

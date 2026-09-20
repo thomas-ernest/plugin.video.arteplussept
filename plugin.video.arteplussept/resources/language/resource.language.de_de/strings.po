@@ -201,6 +201,10 @@ msgctxt "#30060"
 msgid "Play from the start"
 msgstr "Ab Anfang spielen"
 
+msgctxt "#30064"
+msgid "Enable playback tracking"
+msgstr "Wiedergabeverfolgung aktivieren"
+
 
 msgctxt "#30061"
 msgid "Version {version} installed successfully"

@@ -29,12 +29,8 @@ plugin = Plugin()
 settings = Settings(plugin)
 
 
-@plugin.route('/', name='index')
-def display_index():
-    """
-    Display home menu. On every new version, display a dialog box
-    to remind users where to donate and report issues.
-    """
+def _notify_new_version():
+    """Notify user about new version of the add-on"""
     addon = xbmcaddon.Addon()
     current_version = addon.getAddonInfo("version")
     last_version = addon.getSetting("last_version_notified")
@@ -48,6 +44,25 @@ def display_index():
         addon.setSetting("last_version_notified", current_version)
         addon.setSetting("last_date_notified", date.today().strftime(DATE_FORMAT))
 
+
+def _attach_user_id_to_token():
+    """Attach user id to token if not already present"""
+    email = settings.username
+    token = user.get_cached_token(plugin, email, True)
+    if token and not token.get('user_id'):
+        user_data = api.get_personal_data(token)
+        if user_data and user_data.get('user_id'):
+            token['user_id'] = user_data['user_id']
+            user.set_cached_token(plugin, email, token)
+
+@plugin.route('/', name='index')
+def display_index():
+    """
+    Display home menu. On every new version, display a dialog box
+    to remind users where to donate and report issues.
+    """
+    _notify_new_version()
+    _attach_user_id_to_token()
     lst_itms = mapper.build_home_page(plugin, settings)
     logger.log_xbmc(lst_itms, 'index')
     user.update_login_state_settings(plugin, settings.username)
@@ -174,7 +189,7 @@ def play(program_id, mpaa):
         addon = xbmcaddon.Addon()
         plugin.notify(addon.getLocalizedString(30034).format(strm=program_id), image='error')
         return None
-    synched_player = Player(user.get_cached_token(plugin, settings.username, True), program_id)
+    synched_player = Player(settings, user.get_cached_token(plugin, settings.username, True))
     played_item = None
     try:
         played_item = mapper.build_video_from_program(plugin, settings, program_id)
@@ -186,7 +201,8 @@ def play(program_id, mpaa):
         logger.log_xbmc(played_item, 'play')
         utils.warn_if_age_restricted(plugin, mpaa)
         xbmc.PlayList(xbmc.PLAYLIST_VIDEO).clear()
-        xbmc.Player().play(played_item.getPath(), played_item)
+        synched_player.set_playback_context(listitem=played_item)
+        synched_player.play(played_item.getPath(), played_item)
         synch_during_playback(synched_player)
     else:
         xbmc.log("Could not resolve stream...", xbmc.LOGERROR)
@@ -227,19 +243,16 @@ def play_collection(col_id, mpaa, prgm_id=None):
                      f"Starting from {startpos}", xbmc.LOGERROR)
 
     # Start playing with the first playlist item
-    # Disabling playback synchronization because it is not working
-    # ensured that the synched_player is created with the program id of the item being played
-    # when playing a collection
-    # synched_player = Player(
-    #    user.get_cached_token(plugin, settings.username, True), prgm_id)
+    synched_player = Player(settings, user.get_cached_token(plugin, settings.username, True))
     # try to seek parent collection, when out of the context of playlist creation
     # Start playing with the first playlist item
     played_item = mapper.build_playable_playlist(playlist['collection'])
     logger.log_xbmc(played_item, 'play_collection')
     utils.warn_if_age_restricted(plugin, mpaa)
-    xbmc.Player().play(played_item, startpos=startpos)
-    # synch_during_playback(synched_player)
-    # del synched_player
+    synched_player.set_playback_context(playlist=played_item)
+    synched_player.play(played_item, startpos=startpos)
+    synch_during_playback(synched_player)
+    del synched_player
     return True
 
 
@@ -254,10 +267,10 @@ def synch_during_playback(synched_player):
     while synched_player.is_playback():
         # synch progress to Arte TV every minute, as on website
         if i % 60 == 0:
-            synched_player.synch_progress()
+            synched_player.synch_progress('VIDEO_PLAYED')
         i += 1
         xbmc.sleep(1000)
-    synched_player.synch_progress()
+    synched_player.synch_progress('VIDEO_STOPPED')
 
 
 def plugin_operate(my_plugin, marking):
