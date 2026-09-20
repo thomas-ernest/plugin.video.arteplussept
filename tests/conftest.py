@@ -10,6 +10,10 @@ fake_xbmc.LOGERROR = 4
 fake_xbmc.LOGWARNING = 3
 fake_xbmc.LOGDEBUG = 2
 fake_xbmc.log = Mock()
+fake_xbmc.Player = object
+fake_xbmc.ISO_639_1 = 0
+fake_xbmc.getLanguage = Mock(return_value="fr")
+fake_xbmc.getInfoLabel = Mock(return_value="plugin://plugin.video.arteplussept/")
 sys.modules["xbmc"] = fake_xbmc
 
 fake_xbmcaddon = types.ModuleType("xbmcaddon")
