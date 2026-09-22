@@ -3,6 +3,7 @@ Various Arte items : basic Arte item, Arte Colleciton, Arte Live Item, etc..
 """
 import html
 import datetime
+import json
 import xbmc
 import xbmcgui
 from resources.lib import actions
@@ -56,6 +57,7 @@ class ArteVideoItem(ArteItem):
             li.setPath(str(path))
         if hasattr(li, 'setProperty'):
             li.setProperty('is_playable', str(bool(is_playable)))
+
         li.setArt({
             'thumb': self._get_image_url('480x270', True),
             'fanart': self._get_image_url('1920x1080', False)
@@ -83,6 +85,33 @@ class ArteVideoItem(ArteItem):
                     'mark_as_watched', program_id=program_id, label=label))),
         ], replaceItems=False)
         return li
+
+    def set_tracking_properties(self, li, stat):
+        """
+        Set properties to track progress.
+        """
+        tracking = stat.get('serverSideTracking', {})
+        if tracking:
+            # li.setProperty('arte_tracking', json.dumps(tracking, ensure_ascii=False))
+
+            for key, value in {
+                'arte_program_id': tracking.get('id'),
+                'arte_slug': tracking.get('slug'),
+                'arte_program_type': tracking.get('programType'),
+                'arte_category': tracking.get('category'),
+                'arte_subcategory': tracking.get('subcategory'),
+                'arte_genre': tracking.get('genre'),
+                'arte_kind': tracking.get('kind'),
+                'arte_associated_collections': json.dumps(
+                    tracking.get('associatedCollections', []), ensure_ascii=False
+                ) if isinstance(tracking.get('associatedCollections'), list)
+                else tracking.get('associatedCollections'),
+                # already computed with xbmcgui.ListItem.getVideoInfoTag().getDuration()
+                # 'arte_duration': tracking.get('duration'),
+                'arte_image_format': tracking.get('imageFormat'),
+            }.items():
+                if value is not None:
+                    li.setProperty(key, str(value))
 
     def _get_duration(self):
         """
