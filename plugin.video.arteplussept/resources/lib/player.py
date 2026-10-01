@@ -1,8 +1,11 @@
 """Events enhancing behavior of default Kodi player"""
 from datetime import datetime, timezone
+from typing import Optional, Union
 import json
 
 import xbmc
+import xbmcgui
+import xbmcaddon
 from resources.lib import api
 from resources.lib.utils import PLUGIN_NAME, PLUGIN_VERSION
 
@@ -12,11 +15,12 @@ from resources.lib.utils import PLUGIN_NAME, PLUGIN_VERSION
 # https://xbmc.github.io/docs.kodi.tv/master/kodi-dev-kit/group__python___player_c_b.html
 
 
+# pylint: disable=too-many-instance-attributes
 class Player(xbmc.Player):
     """Events enhancing behavior of default Kodi player
     used to track in Arte TV progress time and history"""
 
-    def __init__(self, settings, token):
+    def __init__(self, settings, token, extended_program_data=None):
         super().__init__()
         self.last_time = 0
         self.consent_tracking = settings.consent_tracking
@@ -28,6 +32,8 @@ class Player(xbmc.Player):
         self.playlist = None
         self.fallback_listitem = None
         self.token = token
+        self.extended_program_data = extended_program_data
+        self.did_seek_start_offset = False
 
     ####
     # client data management at player creation time
@@ -135,6 +141,15 @@ class Player(xbmc.Player):
         try:
             # Kodi exposes the item that is actually playing here with player.getPlayingItem()
             current_item = self.getPlayingItem()
+
+            # Seek start offset if available and never done before, only for first item
+            if not self.did_seek_start_offset:
+                self.did_seek_start_offset = True
+                # start_offset = current_item.getProperty('StartOffset')
+                start_time = current_item.getProperty('arte_start_offset')
+                if start_time is not None and start_time.isdecimal() and start_time.strip('0'):
+                    self.seekTime(float(start_time))
+
             self.program_data = self.build_program_data(current_item)
 
             # Kodi may return the current item without custom ListItem
@@ -219,6 +234,53 @@ class Player(xbmc.Player):
         except Exception:
             return False
 
+    def _keep_or_reset_start_offset(self, listitem):
+        """Check the resume offset, ask end user to keep it or reset it."""
+        if listitem is None:
+            return
+
+        try:
+            offset_seconds = int(listitem.getProperty('arte_start_offset'))
+        except (TypeError, ValueError, OverflowError):
+            return
+        if offset_seconds <= 0:
+            return
+
+        if offset_seconds >= 3600:
+            hours, remainder = divmod(offset_seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            start_offset = f'{hours:02d}:{minutes:02d}:{seconds:02d}'
+        else:
+            minutes, seconds = divmod(offset_seconds, 60)
+            start_offset = f'{minutes:02d}:{seconds:02d}'
+
+        item_label = listitem.getVideoInfoTag().getTitle()
+        addon = xbmcaddon.Addon()
+        keep_start_offset = xbmcgui.Dialog().yesno(
+            addon.getLocalizedString(30065),
+            addon.getLocalizedString(30066).format(
+                item_label=item_label,
+                start_offset=start_offset
+            ),
+            # if yesnocustom, needs to stop playback if cancelled
+            # xbmc.getLocalizedString(222),
+            autoclose=10000,
+            defaultbutton=xbmcgui.DLG_YESNO_YES_BTN
+        )
+        if not keep_start_offset:
+            listitem.setProperty('arte_start_offset', '0')
+
+    def play(self, item: Union[str, 'xbmc.PlayList'] = "",
+             listitem: Optional['xbmcgui.ListItem'] = None,
+             windowed: bool = False,
+             startpos: int = -1) -> None:
+        """
+        Ask end-user to keep or reset start offset before playing the item.
+        Start offset is used to seek the playback position. Otherwise start from the beginning.
+        """
+        self._keep_or_reset_start_offset(listitem)
+        super().play(item, listitem, windowed, startpos)
+
     def synch_progress(self, action):
         """Track progress/playback time and share it with Arte TV,
         so that other device with the user account can share progress and history"""
@@ -245,9 +307,16 @@ class Player(xbmc.Player):
             return 400
         self.last_time = round(self.last_time)
 
-        status = api.track_playback(self.token,
-            self.client_data, self.program_data, self.build_playback_data(action)
+        status = api.track_playback(
+            self.token, self.client_data, self.program_data, self.build_playback_data(action),
         )
+        # keep internal progress cache up to date, if arte updates its state sucessfully
+        status_code = getattr(status, 'status_code', None)
+        if (self.extended_program_data is not None and isinstance(status_code, int)
+                and 200 <= status_code < 300):
+            self.extended_program_data.update_program(
+                program_id, self.last_time, self.program_data.get('duration')
+            )
 
         xbmc.log(f"Synchronisation of progress {self.last_time}s for program_id {program_id}" +
                  f" ended with {status}",

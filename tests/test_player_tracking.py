@@ -8,6 +8,7 @@ from resources.lib.player import Player
 
 def test_map_program_data_omits_missing_genre():
     """Trailers without a genre still produce a valid tracking context."""
+    # pylint: disable=protected-access
     result = api._map_program_data({
         'program_id': 'PCF2842',
         'stream_url': 'https://example.test/trailer.m3u8',
@@ -21,13 +22,19 @@ def test_terminal_playback_data_uses_last_time_after_kodi_closes_media():
     """Terminal callbacks must not call Kodi getTime after media shutdown."""
     player = Player.__new__(Player)
     player.last_time = 502
+    # pylint: disable=protected-access
     player._get_jsonrpc_properties = Mock(return_value={})
-    player.getTime = Mock(side_effect=RuntimeError('Kodi is not playing any media file'))
+    get_time = Mock(side_effect=RuntimeError('Kodi is not playing any media file'))
+    setattr(
+        player,
+        'getTime',
+        get_time,
+    )
 
     result = player.build_playback_data('VIDEO_STOPPED')
 
     assert result['timecode'] == 502
-    player.getTime.assert_not_called()
+    get_time.assert_not_called()
 
 
 def test_build_program_data_includes_display_page_context():
@@ -45,4 +52,5 @@ def test_build_program_data_includes_display_page_context():
 
     assert result['page_language'] == 'fr'
     assert result['page_url'] == 'plugin://plugin.video.arteplussept/'
+    # pylint: disable=no-member
     xbmc.getInfoLabel.assert_called_with('Container.FolderPath')
