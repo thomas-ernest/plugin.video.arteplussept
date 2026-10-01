@@ -133,8 +133,8 @@ def get_last_viewed_all(lang, tkn):
     next_page_idx = 1
     while next_page_idx:
         current_page = get_last_viewed(lang, tkn, next_page_idx)
-        if current_page is not None and isinstance(current_page, dict):
-            all_data = all_data + current_page.get('data', [])
+        if current_page is not None and isinstance(current_page, dict) and current_page.get('data'):
+            all_data.extend(current_page['data'])
         next_page_idx = _get_next_page(current_page)
     return all_data
 
@@ -538,7 +538,7 @@ def device_authorization_request():
 
         return resp.json()
 
-    # pylint: disable=broad-except
+    # pylint: disable=broad-exception-caught
     except Exception as e:
         xbmc.log(f"Device authorization exception: {e}", level=xbmc.LOGERROR)
         return None
@@ -567,7 +567,7 @@ def device_token_request(device_code):
         logger.log_json(resp, 'artetv_auth_devicetoken', True)
         return resp.json()
 
-    # pylint: disable=broad-except
+    # pylint: disable=broad-exception-caught
     except Exception as e:
         xbmc.log(f"Device token polling exception: {e}", level=xbmc.LOGERROR)
         return {"error": "exception"}

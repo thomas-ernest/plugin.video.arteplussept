@@ -1,7 +1,6 @@
 """Main module for Kodi add-on plugin.video.arteplussept"""
 
 from datetime import date
-from typing import Final
 import traceback
 import json
 
@@ -13,6 +12,7 @@ from resources.lib import logger
 from resources.lib import user
 from resources.lib import utils
 from resources.lib import api
+from resources.lib.extended_program_data import ExtendedProgramData
 from resources.lib.mapper import mapper
 from resources.lib.mapper.artefavorites import ArteFavorites
 from resources.lib.mapper.artehistory import ArteHistory
@@ -54,6 +54,7 @@ def _attach_user_id_to_token():
         if user_data and user_data.get('user_id'):
             token['user_id'] = user_data['user_id']
             user.set_cached_token(plugin, email, token)
+
 
 @plugin.route('/', name='index')
 def display_index():
@@ -189,7 +190,9 @@ def play(program_id, mpaa):
         addon = xbmcaddon.Addon()
         plugin.notify(addon.getLocalizedString(30034).format(strm=program_id), image='error')
         return None
-    synched_player = Player(settings, user.get_cached_token(plugin, settings.username, True))
+    token = user.get_cached_token(plugin, settings.username, True)
+    extended_program_data = ExtendedProgramData(plugin, settings, token)
+    synched_player = Player(settings, token, extended_program_data)
     played_item = None
     try:
         played_item = mapper.build_video_from_program(plugin, settings, program_id)
@@ -232,25 +235,24 @@ def play_collection(col_id, mpaa, prgm_id=None):
         addon = xbmcaddon.Addon()
         plugin.notify(addon.getLocalizedString(30029).format(strm=col_id, ln='no'))
         return None
-    # set start position with or without program id
-    # pylint: disable=invalid-name
-    DEFAULT_START_POS: Final[int] = -1
-    startpos = DEFAULT_START_POS
-    if prgm_id:
-        startpos = playlist['prgm_id_to_pos'].get(prgm_id, DEFAULT_START_POS)
-        if DEFAULT_START_POS == startpos:
-            xbmc.log(f"Unable to find program {prgm_id} in collection {col_id}. " +
-                     f"Starting from {startpos}", xbmc.LOGERROR)
+    # Explicit episode selection takes precedence over automatic resume.
+    startpos = mapper.get_collection_resume_position(
+        playlist['collection'], playlist['prgm_id_to_pos'], prgm_id,
+        collection_id=col_id
+    )
 
     # Start playing with the first playlist item
-    synched_player = Player(settings, user.get_cached_token(plugin, settings.username, True))
-    # try to seek parent collection, when out of the context of playlist creation
-    # Start playing with the first playlist item
-    played_item = mapper.build_playable_playlist(playlist['collection'])
-    logger.log_xbmc(played_item, 'play_collection')
+    token = user.get_cached_token(plugin, settings.username, True)
+    extended_program_data = ExtendedProgramData(plugin, settings, token)
+    synched_player = Player(settings, token, extended_program_data)
+    played_playlist = mapper.build_playable_playlist(playlist['collection'])
+    played_item = None
+    if 0 <= startpos < played_playlist.size():
+        played_item = playlist['collection'][startpos]
+    logger.log_xbmc(played_playlist, 'play_collection')
     utils.warn_if_age_restricted(plugin, mpaa)
-    synched_player.set_playback_context(playlist=played_item)
-    synched_player.play(played_item, startpos=startpos)
+    synched_player.set_playback_context(playlist=played_playlist)
+    synched_player.play(played_playlist, played_item, startpos=startpos)
     synch_during_playback(synched_player)
     del synched_player
     return True

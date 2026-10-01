@@ -250,12 +250,27 @@ class ArteTvVideoItem(ArteVideoItem):
         duration = self._get_duration()
 
         tag = li.getVideoInfoTag()
-        if self.json_dict.get('lastviewed', False) and duration is not None:
-            resume_offset = self._get_time_offset()
-            tag.setResumePoint(resume_offset, duration)
-            tag.setPlaycount(1 if progress >= 0.95 else 0)
-            li.setProperty('StartPercent', str(float(resume_offset) * 100.0 / float(duration)))
-            li.setProperty('StartOffset', str(resume_offset))
+        last_viewed = self.json_dict.get('lastviewed') or {}
+        resume_offset = last_viewed.get(
+            'timecode', self.json_dict.get('last_viewed_time')
+        )
+        has_progress = (
+            bool(last_viewed.get('is'))
+            or resume_offset is not None
+            or self.json_dict.get('progress') is not None
+        )
+        if has_progress:
+            if duration is not None and duration > 0:
+                try:
+                    resume_offset = max(0, min(int(float(resume_offset or 0)), duration))
+                except (TypeError, ValueError, OverflowError):
+                    resume_offset = 0
+                if resume_offset > 0:
+                    # self manage resume point instead of kodi, because the latter is unable to seek
+                    # start offset with inputstream adaptive plugin
+                    # tag.setResumePoint(resume_offset, duration)
+                    li.setProperty('arte_start_offset', str(resume_offset))
+                tag.setPlaycount(1 if progress >= 0.95 else 0)
 
         return li
 
@@ -348,15 +363,21 @@ class ArteTvVideoItem(ArteVideoItem):
         DEFAULT_PROGRESS = 0.0
         if not self.json_dict:
             return DEFAULT_PROGRESS
-        if not self.json_dict.get('lastviewed'):
+        last_viewed = self.json_dict.get('lastviewed') or {}
+        progress = last_viewed.get('progress')
+        if progress is None:
+            progress = self.json_dict.get('progress')
+        if progress is None:
             return DEFAULT_PROGRESS
-        if not self.json_dict.get('lastviewed').get('progress'):
-            return DEFAULT_PROGRESS
-        return float(self.json_dict.get('lastviewed').get('progress'))
+        return float(progress)
 
     def _get_time_offset(self):
         item = self.json_dict
-        return item.get('lastviewed') and item.get('lastviewed').get('timecode') or 0
+        last_viewed = item.get('lastviewed') or {}
+        timecode = last_viewed.get('timecode')
+        if timecode is None:
+            timecode = item.get('last_viewed_time')
+        return timecode or 0
 
 
 class ArteCollectionItem(ArteItem):
