@@ -299,7 +299,7 @@ def _attach_user_id_to_token(token, user_data):
             token['user_id'] = user_id
             return token
 
-    xbmc.log(f"Unable to attach userId from user_data: {user_data} to token: {token}",
+    xbmc.log("Unable to attach userId from user_data to token",
              level=xbmc.LOGERROR)
     return token
 

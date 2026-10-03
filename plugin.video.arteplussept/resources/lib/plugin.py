@@ -4,6 +4,8 @@ from datetime import date
 import traceback
 import json
 
+# pylint: disable=import-error
+import requests
 import xbmcaddon
 import xbmcgui
 import xbmc
@@ -46,14 +48,21 @@ def _notify_new_version():
 
 
 def _attach_user_id_to_token():
-    """Attach user id to token if not already present"""
+    """Best-effort attach user id to cached token without blocking navigation."""
     email = settings.username
     token = user.get_cached_token(plugin, email, True)
     if token and not token.get('user_id'):
-        user_data = api.get_personal_data(token)
-        if user_data and user_data.get('user_id'):
-            token['user_id'] = user_data['user_id']
-            user.set_cached_token(plugin, email, token)
+        try:
+            user_data = api.get_personal_data(token)
+            if user_data and user_data.get('userId'):
+                token['user_id'] = user_data['userId']
+                user.set_cached_token(plugin, email, token)
+        except (requests.exceptions.RequestException, AttributeError, KeyError,
+                TypeError, ValueError) as err:
+            xbmc.log(
+                f"Unable to retrieve Arte userId; continuing without it: {err}",
+                level=xbmc.LOGWARNING
+            )
 
 
 @plugin.route('/', name='index')
@@ -272,7 +281,6 @@ def synch_during_playback(synched_player):
             synched_player.synch_progress('VIDEO_PLAYED')
         i += 1
         xbmc.sleep(1000)
-    synched_player.synch_progress('VIDEO_STOPPED')
 
 
 def plugin_operate(my_plugin, marking):

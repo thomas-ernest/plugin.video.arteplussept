@@ -94,6 +94,33 @@ def test_failed_refresh_keeps_stale_program_data(monkeypatch):
     assert result['last_viewed_time'] == 120
 
 
+def test_enrich_replaces_inactive_last_viewed_with_cached_active_history():
+    """An inactive page history must not hide an active cached resume point."""
+    page_data = {'lastviewed': {'is': False}}
+    cached_data = {
+        'lastviewed': {'is': True, 'timecode': 1803, 'progress': 0.55},
+        'last_viewed_time': 1803,
+        'progress': 0.55,
+    }
+
+    result = extended_module.enrich_program_data(page_data, cached_data)
+
+    assert result['lastviewed'] == cached_data['lastviewed']
+    assert result['last_viewed_time'] == 1803
+    assert result['progress'] == 0.55
+
+
+def test_enrich_preserves_active_page_history_over_cached_history():
+    """An active history in the current page takes precedence over cached data."""
+    page_history = {'is': True, 'timecode': 1200, 'progress': 0.4}
+    result = extended_module.enrich_program_data(
+        {'lastviewed': page_history},
+        {'lastviewed': {'is': True, 'timecode': 1803, 'progress': 0.55}},
+    )
+
+    assert result['lastviewed'] == page_history
+
+
 def test_local_write_does_not_skip_first_history_snapshot(monkeypatch):
     """A player write before the first lookup still triggers the full lazy load."""
     plugin = FakePlugin()

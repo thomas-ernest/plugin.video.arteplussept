@@ -123,14 +123,29 @@ class ExtendedProgramData:
 
 
 def enrich_program_data(program_data, extended_data):
-    """Fill only missing fields from a cached program response."""
+    """Merge cached fields without replacing authoritative current data."""
     enriched = dict(program_data)
     for key, value in extended_data.items():
+        # Empty cache values cannot add useful information to the response.
         if value is None:
             continue
         if key == 'lastviewed':
-            if not enriched.get(key):
+            # Preserve active page history, but replace missing or inactive
+            # history when the cache has an active resume point.
+            current_last_viewed = enriched.get(key)
+            current_is_active = (
+                isinstance(current_last_viewed, dict)
+                and current_last_viewed.get('is') is True
+            )
+            cached_is_active = (
+                isinstance(value, dict) and value.get('is') is True
+            )
+            if not current_last_viewed or (cached_is_active and not current_is_active):
                 enriched[key] = value
         elif enriched.get(key) in (None, ''):
+            # For all other fields, the cache only fills missing page data.
             enriched[key] = value
+        else:
+            # A non-empty value from the current response takes precedence.
+            continue
     return enriched

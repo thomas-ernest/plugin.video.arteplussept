@@ -18,7 +18,7 @@
 			id="consent_tracking"
 			type="bool"
 			label="30064"
-			default="true" />
+			default="false" />
 		<setting
 			id="last_version_notified"
 			type="text"

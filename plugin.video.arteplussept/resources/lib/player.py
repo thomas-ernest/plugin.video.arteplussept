@@ -33,7 +33,7 @@ class Player(xbmc.Player):
         self.fallback_listitem = None
         self.token = token
         self.extended_program_data = extended_program_data
-        self.did_seek_start_offset = False
+        self.did_process_first_item_offset = False
 
     ####
     # client data management at player creation time
@@ -77,7 +77,6 @@ class Player(xbmc.Player):
         else:
             current_item = self.fallback_listitem
         self.program_data = self.build_program_data(current_item)
-        xbmc.log(f"context set with program data {self.program_data}", level=xbmc.LOGERROR)
 
     def build_program_data(self, listitem):
         """Build the program object expected by ``api.track_playback``.
@@ -142,14 +141,6 @@ class Player(xbmc.Player):
             # Kodi exposes the item that is actually playing here with player.getPlayingItem()
             current_item = self.getPlayingItem()
 
-            # Seek start offset if available and never done before, only for first item
-            if not self.did_seek_start_offset:
-                self.did_seek_start_offset = True
-                # start_offset = current_item.getProperty('StartOffset')
-                start_time = current_item.getProperty('arte_start_offset')
-                if start_time is not None and start_time.isdecimal() and start_time.strip('0'):
-                    self.seekTime(float(start_time))
-
             self.program_data = self.build_program_data(current_item)
 
             # Kodi may return the current item without custom ListItem
@@ -162,6 +153,15 @@ class Player(xbmc.Player):
                 else:
                     current_item = self.fallback_listitem
                 self.program_data = self.build_program_data(current_item)
+
+            # Only the first playback item can resume. Consider it after
+            # fallback recovery so missing Kodi ListItem properties don't
+            # suppress its saved offset, and never seek on playlist transitions.
+            if not self.did_process_first_item_offset and current_item is not None:
+                start_time = current_item.getProperty('arte_start_offset')
+                self.did_process_first_item_offset = True
+                if start_time is not None and start_time.isdecimal() and start_time.strip('0'):
+                    self.seekTime(float(start_time))
         except (AttributeError, RuntimeError, TypeError, ValueError):
             xbmc.log(
                 "Unable to rebuild program data for the current playback item.",

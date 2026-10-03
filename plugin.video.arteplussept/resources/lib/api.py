@@ -65,7 +65,8 @@ ARTETV_HEADERS = {
     # prefer client tv over web so that Arte adapt content to tv limiting links for instance
     'client': 'tv',
     'accept': 'application/json',
-    'content-type': 'application/json',
+    # no content-type, becasue it is delegated to requests lib
+    # to manage it based on the payload type (form-data, json, etc.)
 }
 
 _ARTETV_ID_URL = 'https://id.arte.tv/auth/realms/myarte-prod/protocol/openid-connect'
@@ -282,34 +283,38 @@ def track_playback(token, client_data, program_data, playback_data):
     :param playback_data: Ordered mapping or dict with current playback state.
     :return: requests.Response when the call succeeds, otherwise None.
     """
-    if not all([client_data, program_data, playback_data]):
-        raise ValueError('track_playback requires all input parameters')
+    try:
+        if not all([client_data, program_data, playback_data]):
+            raise ValueError('track_playback requires all input parameters')
 
-    payload = {
-        'action': playback_data['action'],
-        'apiContext': _map_program_data(program_data),
-        'client': _map_client_data(client_data),
-        'frontendContext': {
-            'player': {
-                'audioTrackLanguage': playback_data.get('audio_track_language'),
-                'audioTrackType': playback_data.get('audio_track_type', 'STANDARD'),
-                'playbackMode': 'DEVICE',
-                'previousTimecode': int(playback_data['previous_timecode']),
-                'soundMuted': bool(playback_data.get('sound_muted', False)),
-                'streamUrl': program_data['stream_url'],
-                'subtitlesTrackLanguage': playback_data.get('subtitles_track_language'),
-                'subtitlesTrackType': playback_data.get('subtitles_track_type'),
-                'timecode': int(playback_data['timecode']),
+        payload = {
+            'action': playback_data['action'],
+            'apiContext': _map_program_data(program_data),
+            'client': _map_client_data(client_data),
+            'frontendContext': {
+                'player': {
+                    'audioTrackLanguage': playback_data.get('audio_track_language'),
+                    'audioTrackType': playback_data.get('audio_track_type', 'STANDARD'),
+                    'playbackMode': 'DEVICE',
+                    'previousTimecode': int(playback_data['previous_timecode']),
+                    'soundMuted': bool(playback_data.get('sound_muted', False)),
+                    'streamUrl': program_data['stream_url'],
+                    'subtitlesTrackLanguage': playback_data.get('subtitles_track_language'),
+                    'subtitlesTrackType': playback_data.get('subtitles_track_type'),
+                    'timecode': int(playback_data['timecode']),
+                },
             },
-        },
-        'source': {
-            'referrer': '',
-        },
-        'time': playback_data['event_time'],
-        'type': 'PLAYBACK',
+            'source': {
+                'referrer': '',
+            },
+            'time': playback_data['event_time'],
+            'type': 'PLAYBACK',
 
-    }
-    headers = _add_auth_token(token, ARTETV_HEADERS)
+        }
+        headers = _add_auth_token(token, ARTETV_HEADERS)
+    except (KeyError, TypeError, ValueError, OverflowError) as err:
+        xbmc.log(f"Invalid Arte playback tracking data: {err}", level=xbmc.LOGERROR)
+        return None
 
     try:
         reply = requests.post(_ARTE_TRACKING_URL, json=payload, headers=headers, timeout=10)
@@ -526,11 +531,7 @@ def device_authorization_request():
             "scope": "openid"
         }
 
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-
-        resp = requests.post(DEVICE_AUTH_URL, data=payload, headers=headers, timeout=10)
+        resp = requests.post(DEVICE_AUTH_URL, data=payload, timeout=10)
         logger.log_json(resp, 'artetv_deviceauth', True)
         if resp.status_code != 200:
             xbmc.log(f"Device authorization failed: HTTP {resp.status_code}", level=xbmc.LOGERROR)
@@ -559,11 +560,7 @@ def device_token_request(device_code):
             "client_id": SMART_TV_CLIENT_ID
         }
 
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-
-        resp = requests.post(DEVICETOKEN_URL, data=payload, headers=headers, timeout=10)
+        resp = requests.post(DEVICETOKEN_URL, data=payload, timeout=10)
         logger.log_json(resp, 'artetv_auth_devicetoken', True)
         return resp.json()
 
