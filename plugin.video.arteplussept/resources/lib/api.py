@@ -1,6 +1,5 @@
 """Arte TV and HBB TV API communications - REST and authentication calls"""
 from collections import OrderedDict
-# pylint: disable=import-error
 import requests
 import xbmc
 from resources.lib import logger

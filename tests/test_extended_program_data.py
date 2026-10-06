@@ -196,7 +196,7 @@ def test_cached_last_viewed_time_is_applied_to_kodi_listitem(monkeypatch):
 
     builder.build_item('https://example.test/video.m3u8', True)
 
-    #listitem.getVideoInfoTag().setResumePoint.assert_called_once_with(1803, 3360)
+    # listitem.getVideoInfoTag().setResumePoint.assert_called_once_with(1803, 3360)
     listitem.setProperty.assert_any_call('arte_start_offset', '1803')
     # listitem.setProperty.assert_any_call('arte_StartPercent', '55.0')
 

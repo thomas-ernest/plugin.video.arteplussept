@@ -27,8 +27,9 @@ def _make_player(playing_items, playlist=None):
     player.playlist = playlist
     player.fallback_listitem = None
     player.did_process_first_item_offset = False
-    player.getPlayingItem = Mock(side_effect=playing_items)
-    player.seekTime = Mock()
+    # mocked method name is out of our control, so we disable the pylint warning for it
+    setattr(player, 'getPlayingItem', Mock(side_effect=playing_items))
+    setattr(player, 'seekTime', Mock())
     player.synch_progress = Mock()
     return player
 
@@ -141,6 +142,8 @@ def test_first_playlist_item_fallback_seeks_and_next_item_does_not():
     player.onAVStarted()
     player.onAVStarted()
 
+    # methods exist thanks to setattr(player, 'seekTime', Mock())
+    # pylint: disable=no-member
     player.seekTime.assert_called_once_with(1803.0)
     assert player.program_data['program_id'] == 'second-program'
 
@@ -154,4 +157,6 @@ def test_first_playlist_item_without_offset_does_not_seek_next_item():
     player.onAVStarted()
     player.onAVStarted()
 
+    # methods exist thanks to setattr(player, 'seekTime', Mock())
+    # pylint: disable=no-member
     player.seekTime.assert_not_called()

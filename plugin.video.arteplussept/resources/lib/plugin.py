@@ -4,7 +4,6 @@ from datetime import date
 import traceback
 import json
 
-# pylint: disable=import-error
 import requests
 import xbmcaddon
 import xbmcgui

@@ -2,7 +2,6 @@
 import hashlib
 import time
 
-# pylint: disable=import-error
 import requests
 
 from resources.lib import api, user

@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest.mock import Mock
 # Third-party imports
 import json
-# pylint: disable=import-error
 import pytest
 
 # Register fake modules: xbmcmixin, listitem, and logger to avoid import errors during testing
