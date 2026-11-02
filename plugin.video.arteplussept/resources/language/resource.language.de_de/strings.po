@@ -227,3 +227,7 @@ msgstr ""
 "Geniesse Arte-Videos auf Kodi mit Arte+7 {version}.\n"
 "Spenden: https://thomas-ernest.github.io/\n"
 "Fehlerberichte oder Anfragen: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"
+
+msgctxt "#30067"
+msgid "Available from {begin_date} to {end_date}"
+msgstr "Verfügbar vom {begin_date} bis {end_date}"

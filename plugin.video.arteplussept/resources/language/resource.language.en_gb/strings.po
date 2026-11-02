@@ -223,3 +223,7 @@ msgid ""
 "Donations: https://thomas-ernest.github.io/\n"
 "Bugs or feature requests: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"
 msgstr ""
+
+msgctxt "#30067"
+msgid "Available from {begin_date} to {end_date}"
+msgstr ""
