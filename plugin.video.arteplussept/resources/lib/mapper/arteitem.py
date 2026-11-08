@@ -5,6 +5,7 @@ import html
 import datetime
 import json
 import xbmc
+import xbmcaddon
 import xbmcgui
 from resources.lib import actions
 from resources.lib import utils
@@ -64,8 +65,12 @@ class ArteVideoItem(ArteItem):
         })
 
         tag = li.getVideoInfoTag()
+        plot = self.json_dict.get('shortDescription') or self.json_dict.get('fullDescription') or ""
+        availability_desc = self._get_availability_description()
+        if availability_desc is not None:
+            plot += f"\n\n{availability_desc}"
         tag.setTitle(self.json_dict.get('title'))
-        tag.setPlot(self.json_dict.get('shortDescription') or self.json_dict.get('fullDescription'))
+        tag.setPlot(plot)
         tag.setPlotOutline(self.json_dict.get('teaserText'))
         tag.setMpaa(self._get_mpaa_age_rating())
         tag.setFirstAired(self._get_air_date())
@@ -148,6 +153,13 @@ class ArteVideoItem(ArteItem):
         Return date when item was showed to public for the first time.
         """
         raise NotImplementedError("Subclasses must implement _get_air_date")
+
+    def _get_availability_description(self):
+        """
+        Abstract method to be implemented in child classes.
+        Return a string describing the availability of the item.
+        """
+        raise NotImplementedError("Subclasses must implement _get_availability_description")
 
     def _get_image_url(self, wished_res, wished_text):
         """
@@ -302,11 +314,36 @@ class ArteTvVideoItem(ArteVideoItem):
     def _get_mpaa_age_rating(self):
         return utils.mpaa_from_age(self.json_dict.get('ageRating', None))
 
-    def _get_air_date(self):
-        airdate = self.json_dict.get('beginsAt')
+    def _get_availability(self):
+        return self.json_dict.get('availability') or {}
+
+    def _get_air_datetime(self):
+        airdate = self.json_dict.get('beginsAt') or self._get_availability().get('start')
         if airdate is not None:
-            airdate = str(self._parse_date_artetv(airdate))
+            airdate = self._parse_date_artetv(airdate)
         return airdate
+
+    def _get_expire_datetime(self):
+        expiredate = self.json_dict.get('expireAt') or self._get_availability().get('end')
+        if expiredate is not None:
+            expiredate = self._parse_date_artetv(expiredate)
+        return expiredate
+
+    def _get_air_date(self):
+        airdate = self._get_air_datetime()
+        if airdate is not None:
+            airdate = airdate.strftime("%Y-%m-%d")
+        return airdate
+
+    def _get_availability_description(self):
+        airdate = self._get_air_datetime()
+        expiredate = self._get_expire_datetime()
+        ret = None
+        if airdate and expiredate:
+            addon = xbmcaddon.Addon()
+            date_format = xbmc.getRegion('dateshort')
+            ret = addon.getLocalizedString(30067).format(begin_date=airdate.strftime(date_format), end_date=expiredate.strftime(date_format))
+        return ret
 
     def _parse_date_artetv(self, datestr):
         """
@@ -316,8 +353,7 @@ class ArteTvVideoItem(ArteVideoItem):
         """
         date = None
         try:
-            date_obj = datetime.datetime.strptime(datestr, '%Y-%m-%dT%H:%M:%S%z')
-            date = date_obj.strftime("%Y-%m-%d")
+            date = datetime.datetime.fromisoformat(datestr)
         except (TypeError, ValueError) as e:
             xbmc.log(f"arteitem._parse_date_artetv: failed to parse date '{datestr}': {e}",
                      level=xbmc.LOGERROR)

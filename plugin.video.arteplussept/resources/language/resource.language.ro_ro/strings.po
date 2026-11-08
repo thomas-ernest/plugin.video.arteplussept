@@ -227,3 +227,7 @@ msgstr ""
 "Bucură-te de videoclipuri Arte pe Kodi cu Arte+7 {version}.\n"
 "Donații: https://thomas-ernest.github.io/\n"
 "Erori sau solicitări: https://github.com/thomas-ernest/plugin.video.arteplussept/issues"
+
+msgctxt "#30067"
+msgid "Available from {begin_date} to {end_date}"
+msgstr "Disponibil de la {begin_date} până la {end_date}"
